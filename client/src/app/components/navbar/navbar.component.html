@@ -1,0 +1,50 @@
+<mat-toolbar class="navbar">
+  <a routerLink="/" class="brand">
+    <mat-icon>grass</mat-icon>
+    <span>The Farm Gate</span>
+  </a>
+
+  <span class="spacer"></span>
+
+  <nav class="nav-links">
+    <a mat-button routerLink="/browse" routerLinkActive="active-link">Shop</a>
+    <a mat-button routerLink="/browse/Dairy" routerLinkActive="active-link">Dairy</a>
+    <a mat-button routerLink="/browse/Beef" routerLinkActive="active-link">Beef</a>
+    <a mat-button routerLink="/browse/Vegetables" routerLinkActive="active-link">Veg</a>
+  </nav>
+
+  <!-- Basket icon with count badge -->
+  <a mat-icon-button routerLink="/basket" aria-label="Basket">
+    <mat-icon
+      [matBadge]="basket.itemCount()"
+      [matBadgeHidden]="basket.itemCount() === 0"
+      matBadgeColor="accent"
+      matBadgeSize="small"
+    >shopping_basket</mat-icon>
+  </a>
+
+  @if (auth.isLoggedIn()) {
+    @if (auth.currentUser()?.role === 'farm') {
+      <a mat-button routerLink="/farm-dashboard" class="dashboard-link">
+        <mat-icon>storefront</mat-icon> My Dashboard
+      </a>
+    }
+    <button type="button" mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Account">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+    <mat-menu #userMenu="matMenu">
+      @if (auth.currentUser()?.role === 'farm') {
+        <button type="button" mat-menu-item routerLink="/farm-dashboard">
+          <mat-icon>storefront</mat-icon>
+          <span>My Dashboard</span>
+        </button>
+      }
+      <button type="button" mat-menu-item (click)="auth.logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Sign out</span>
+      </button>
+    </mat-menu>
+  } @else {
+    <a mat-button routerLink="/login">Sign in</a>
+  }
+</mat-toolbar>

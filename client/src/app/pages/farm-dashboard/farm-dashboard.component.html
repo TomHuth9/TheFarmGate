@@ -1,0 +1,118 @@
+<div class="dashboard-page section-pad">
+  <div class="container">
+    <div class="dashboard-header">
+      <div>
+        <h1 class="page-title">My Farm Dashboard</h1>
+        <p class="subtitle">Manage your product listings</p>
+      </div>
+      <button type="button" mat-raised-button color="primary" (click)="openAdd()">
+        <mat-icon>add</mat-icon> Add Product
+      </button>
+    </div>
+
+    <!-- Add / Edit form panel -->
+    @if (showForm()) {
+      <div class="form-panel">
+        <h2>{{ editingId() ? 'Edit Product' : 'New Product' }}</h2>
+        <form [formGroup]="form" (ngSubmit)="save()" class="product-form">
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Product Name</mat-label>
+              <input matInput formControlName="name" title="Product name" placeholder="e.g. Free-Range Eggs" />
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="3" title="Product description"
+                placeholder="Tell customers about this product…"></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row two-col">
+            <mat-form-field appearance="outline">
+              <mat-label>Category</mat-label>
+              <mat-select formControlName="category" title="Category">
+                @for (cat of categories; track cat) {
+                  <mat-option [value]="cat">{{ cat }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Unit</mat-label>
+              <input matInput formControlName="unit" title="Unit" placeholder="e.g. per dozen, per kg" />
+            </mat-form-field>
+          </div>
+
+          <div class="form-row two-col">
+            <mat-form-field appearance="outline">
+              <mat-label>Price (£)</mat-label>
+              <input matInput type="number" formControlName="price" step="0.01" min="0" title="Price in pounds" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Stock</mat-label>
+              <input matInput type="number" formControlName="stock" min="0" title="Stock quantity" />
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Image URL (optional)</mat-label>
+              <input matInput formControlName="imageUrl" title="Image URL"
+                placeholder="https://images.unsplash.com/…" />
+            </mat-form-field>
+          </div>
+
+          @if (error()) {
+            <p class="error-msg">{{ error() }}</p>
+          }
+
+          <div class="form-actions">
+            <button type="button" mat-stroked-button (click)="cancelForm()">Cancel</button>
+            <button type="submit" mat-raised-button color="primary" [disabled]="form.invalid || saving()">
+              {{ saving() ? 'Saving…' : (editingId() ? 'Save Changes' : 'Add Product') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Product table -->
+    @if (products().length === 0 && !showForm()) {
+      <div class="empty-state">
+        <mat-icon>storefront</mat-icon>
+        <p>You haven't listed any products yet.</p>
+        <button type="button" mat-raised-button color="primary" (click)="openAdd()">Add your first product</button>
+      </div>
+    } @else {
+      <div class="product-list">
+        @for (p of products(); track p._id) {
+          <div class="product-row">
+            @if (p.imageUrl) {
+              <img [src]="p.imageUrl" [alt]="p.name" [title]="p.name" class="thumb" />
+            } @else {
+              <div class="thumb thumb-placeholder"><mat-icon>image</mat-icon></div>
+            }
+            <div class="product-info">
+              <span class="product-name">{{ p.name }}</span>
+              <span class="product-meta">{{ p.category }} · {{ p.unit }}</span>
+            </div>
+            <span class="product-price">{{ p.price | currency:'GBP' }}</span>
+            <div class="row-actions">
+              <button type="button" mat-icon-button (click)="openEdit(p)" aria-label="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button type="button" mat-icon-button color="warn" (click)="delete(p)" aria-label="Delete">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

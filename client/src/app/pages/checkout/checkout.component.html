@@ -1,0 +1,74 @@
+<div class="checkout-page section-pad">
+  <div class="container">
+    <h1 class="page-title">Checkout</h1>
+
+    @if (!auth.isLoggedIn()) {
+      <div class="login-prompt">
+        <mat-icon>lock</mat-icon>
+        <p>Please sign in to place your order.</p>
+        <a mat-raised-button color="primary" routerLink="/login">Sign In</a>
+      </div>
+    } @else {
+      <div class="checkout-layout">
+        <!-- Delivery address form -->
+        <form [formGroup]="form" (ngSubmit)="submit()" class="address-form">
+          <h2>Delivery Address</h2>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Address line 1</mat-label>
+            <input matInput formControlName="line1" placeholder="12 Farm Lane" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Address line 2 (optional)</mat-label>
+            <input matInput formControlName="line2" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>City / Town</mat-label>
+            <input matInput formControlName="city" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Postcode</mat-label>
+            <input matInput formControlName="postcode" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Order notes (optional)</mat-label>
+            <textarea matInput formControlName="notes" rows="3"></textarea>
+          </mat-form-field>
+
+          @if (error()) {
+            <p class="error-msg">{{ error() }}</p>
+          }
+
+          <button
+            type="submit"
+            mat-raised-button
+            color="primary"
+            class="place-btn"
+            [disabled]="form.invalid || submitting() || basket.items().length === 0"
+          >
+            @if (submitting()) { Placing Order… } @else { Place Order · {{ basket.total() | currency:'GBP' }} }
+          </button>
+        </form>
+
+        <!-- Order summary -->
+        <div class="order-summary">
+          <h2>Your Items</h2>
+          @for (item of basket.items(); track item.product._id) {
+            <div class="summary-row">
+              <span>{{ item.product.name }} × {{ item.quantity }}</span>
+              <span>{{ (item.product.price * item.quantity) | currency:'GBP' }}</span>
+            </div>
+          }
+          <div class="summary-total">
+            <span>Total</span>
+            <span>{{ basket.total() | currency:'GBP' }}</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

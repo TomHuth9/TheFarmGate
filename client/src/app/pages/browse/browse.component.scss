@@ -1,0 +1,39 @@
+.browse-page {
+  padding: 40px 0 60px;
+
+  .page-title {
+    font-family: 'Georgia', serif;
+    color: var(--color-green-dark);
+    font-size: 2rem;
+    margin-bottom: 24px;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 32px;
+
+    button {
+      border-radius: 20px !important;
+      &.active {
+        background: var(--color-green-dark) !important;
+        color: var(--color-cream) !important;
+        border-color: var(--color-green-dark) !important;
+      }
+    }
+  }
+
+  .spinner-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 60px 0;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #777;
+    font-size: 1.1rem;
+    padding: 60px 0;
+  }
+}

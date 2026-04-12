@@ -1,0 +1,53 @@
+<div class="browse-page">
+  <div class="container">
+    <h1 class="page-title">{{ activeCategory() || 'All Products' }}</h1>
+
+    <!-- Category filter toggles -->
+    <div class="filter-bar">
+      @for (cat of categories; track cat) {
+        <button
+          type="button"
+          mat-stroked-button
+          [class.active]="(cat === 'All' && !activeCategory()) || cat === activeCategory()"
+          (click)="selectCategory(cat)"
+        >{{ cat }}</button>
+      }
+    </div>
+
+    @if (loading()) {
+      <div class="spinner-wrap">
+        <mat-spinner diameter="48" />
+      </div>
+    } @else {
+      <div class="product-grid">
+        @for (product of products(); track product._id) {
+          <mat-card class="product-card">
+            <a [routerLink]="['/product', product._id]">
+              <img mat-card-image [src]="product.imageUrl" [alt]="product.name" [title]="product.name" class="product-img" />
+            </a>
+            <mat-card-content>
+              <p class="product-category">{{ product.category }}</p>
+              <h3 class="product-name">
+                <a [routerLink]="['/product', product._id]">{{ product.name }}</a>
+              </h3>
+              <p class="product-desc">{{ product.description }}</p>
+            </mat-card-content>
+            <mat-card-actions>
+              <span class="product-price">
+                {{ product.price | currency:'GBP' }} <small>{{ product.unit }}</small>
+              </span>
+              <button type="button" mat-flat-button color="primary" (click)="basket.add(product)">
+                <mat-icon>add_shopping_cart</mat-icon>
+                Add
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+
+      @if (products().length === 0) {
+        <p class="empty-state">No products found in this category.</p>
+      }
+    }
+  </div>
+</div>

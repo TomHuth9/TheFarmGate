@@ -1,0 +1,45 @@
+<div class="confirmation-page section-pad">
+  <div class="container">
+    @if (order(); as o) {
+      <div class="confirmation-card">
+        <mat-icon class="tick-icon">check_circle</mat-icon>
+        <h1>Order Confirmed!</h1>
+        <p class="sub">Thank you for your order. We'll have it with you shortly.</p>
+
+        <div class="order-meta">
+          <div class="meta-item">
+            <span class="label">Order ID</span>
+            <span class="value">{{ o._id | slice:0:8 }}…</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Placed</span>
+            <span class="value">{{ o.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Status</span>
+            <span class="value status">{{ o.status | titlecase }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Total</span>
+            <span class="value">{{ o.total | currency:'GBP' }}</span>
+          </div>
+        </div>
+
+        <div class="items-list">
+          <h2>Items</h2>
+          @for (item of o.items; track item.product) {
+            <div class="item-row">
+              <span>{{ item.name }} × {{ item.quantity }}</span>
+              <span>{{ (item.price * item.quantity) | currency:'GBP' }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="actions">
+          <a mat-raised-button color="primary" routerLink="/browse">Continue Shopping</a>
+          <a mat-stroked-button routerLink="/">Back to Home</a>
+        </div>
+      </div>
+    }
+  </div>
+</div>

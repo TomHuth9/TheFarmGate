@@ -1,0 +1,61 @@
+<div class="product-detail section-pad">
+  <div class="container">
+    @if (loading()) {
+      <div class="spinner-wrap"><mat-spinner diameter="48" /></div>
+    } @else if (product()) {
+      <a mat-button routerLink="/browse" class="back-link">
+        <mat-icon>arrow_back</mat-icon> Back to Shop
+      </a>
+
+      <div class="detail-grid">
+        <div class="detail-image">
+          <img [src]="product()!.imageUrl" [alt]="product()!.name" [title]="product()!.name" />
+        </div>
+
+        <div class="detail-info">
+          <p class="product-category">{{ product()!.category }}</p>
+          <h1>{{ product()!.name }}</h1>
+          @if (product()!.farm) {
+            <a class="farm-link" [routerLink]="['/farms', product()!.farm!._id]">
+              <mat-icon>agriculture</mat-icon>
+              {{ product()!.farm!.farmName }}
+              @if (product()!.farm!.farmLocation) {
+                <span class="farm-loc"> · {{ product()!.farm!.farmLocation }}</span>
+              }
+            </a>
+          }
+          <p class="product-desc">{{ product()!.description }}</p>
+
+          <div class="price-row">
+            <span class="price">{{ product()!.price | currency:'GBP' }}</span>
+            <span class="unit">{{ product()!.unit }}</span>
+          </div>
+
+          <div class="qty-row">
+            <button type="button" mat-icon-button (click)="changeQty(-1)" [disabled]="quantity() <= 1">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <span class="qty-display">{{ quantity() }}</span>
+            <button type="button" mat-icon-button (click)="changeQty(1)">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+
+          <button type="button" mat-raised-button color="primary" class="add-btn" (click)="addToBasket()">
+            @if (added()) {
+              <ng-container>
+                <mat-icon>check</mat-icon> Added!
+              </ng-container>
+            } @else {
+              <ng-container>
+                <mat-icon>shopping_basket</mat-icon> Add to Basket
+              </ng-container>
+            }
+          </button>
+        </div>
+      </div>
+    } @else {
+      <p class="empty-state">Product not found.</p>
+    }
+  </div>
+</div>

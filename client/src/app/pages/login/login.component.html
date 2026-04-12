@@ -1,0 +1,98 @@
+<div class="login-page section-pad">
+  <div class="container">
+    <div class="auth-card">
+      <h1 class="auth-title">The Farm Gate</h1>
+
+      <mat-tab-group [selectedIndex]="activeTab()" (selectedIndexChange)="activeTab.set($event); error.set('')">
+        <!-- Sign In -->
+        <mat-tab label="Sign In">
+          <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="email" type="email" autocomplete="email" title="Email address" placeholder="you@example.com" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Password</mat-label>
+              <input matInput formControlName="password" type="password" autocomplete="current-password" title="Password" placeholder="••••••" />
+            </mat-form-field>
+
+            @if (error() && activeTab() === 0) {
+              <p class="error-msg">{{ error() }}</p>
+            }
+
+            <button type="submit" mat-raised-button color="primary" [disabled]="loginForm.invalid || loading()">
+              {{ loading() ? 'Signing in…' : 'Sign In' }}
+            </button>
+          </form>
+        </mat-tab>
+
+        <!-- Create Account -->
+        <mat-tab label="Create Account">
+          <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form">
+
+            <!-- Farm toggle -->
+            <div class="farm-toggle">
+              <mat-slide-toggle
+                color="primary"
+                [checked]="isFarm()"
+                (change)="toggleFarm($event.checked)"
+              >I'm registering as a farm</mat-slide-toggle>
+            </div>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ isFarm() ? 'Contact Name' : 'Full Name' }}</mat-label>
+              <input matInput formControlName="name" autocomplete="name" title="Full name" placeholder="Jane Smith" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="email" type="email" autocomplete="email" title="Email address" placeholder="you@example.com" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Password</mat-label>
+              <input matInput formControlName="password" type="password" autocomplete="new-password" title="Password" placeholder="••••••" />
+              <mat-hint>Minimum 6 characters</mat-hint>
+            </mat-form-field>
+
+            @if (!isFarm()) {
+              <mat-form-field appearance="outline">
+                <mat-label>Postcode (to find your collection point)</mat-label>
+                <input matInput formControlName="postcode" placeholder="e.g. SW16 1AB" autocomplete="postal-code" />
+              </mat-form-field>
+            }
+
+            @if (isFarm()) {
+              <div class="farm-fields">
+                <mat-form-field appearance="outline">
+                  <mat-label>Farm Name</mat-label>
+                  <input matInput formControlName="farmName" placeholder="e.g. Meadow View Farm" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Location</mat-label>
+                  <input matInput formControlName="farmLocation" placeholder="e.g. Shropshire, UK" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tell customers about your farm</mat-label>
+                  <textarea matInput formControlName="farmDescription" rows="3"
+                    placeholder="What do you produce? How do you farm?"></textarea>
+                </mat-form-field>
+              </div>
+            }
+
+            @if (error() && activeTab() === 1) {
+              <p class="error-msg">{{ error() }}</p>
+            }
+
+            <button type="submit" mat-raised-button color="primary" [disabled]="registerForm.invalid || loading()">
+              {{ loading() ? 'Creating account…' : (isFarm() ? 'Register My Farm' : 'Create Account') }}
+            </button>
+          </form>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
+</div>

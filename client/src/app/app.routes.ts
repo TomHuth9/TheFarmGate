@@ -1,0 +1,25 @@
+import { Routes } from '@angular/router';
+import { HomeComponent } from './pages/home/home.component';
+import { BrowseComponent } from './pages/browse/browse.component';
+import { ProductDetailComponent } from './pages/product-detail/product-detail.component';
+import { BasketComponent } from './pages/basket/basket.component';
+import { CheckoutComponent } from './pages/checkout/checkout.component';
+import { LoginComponent } from './pages/login/login.component';
+import { OrderConfirmationComponent } from './pages/order-confirmation/order-confirmation.component';
+import { FarmDashboardComponent } from './pages/farm-dashboard/farm-dashboard.component';
+import { FarmProfileComponent } from './pages/farm-profile/farm-profile.component';
+
+export const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'browse', component: BrowseComponent },
+  { path: 'browse/:category', component: BrowseComponent },
+  { path: 'product/:id', component: ProductDetailComponent },
+  { path: 'basket', component: BasketComponent },
+  { path: 'checkout', component: CheckoutComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: LoginComponent },
+  { path: 'order-confirmation/:id', component: OrderConfirmationComponent },
+  { path: 'farm-dashboard', component: FarmDashboardComponent },
+  { path: 'farms/:id', component: FarmProfileComponent },
+  { path: '**', redirectTo: '' },
+];

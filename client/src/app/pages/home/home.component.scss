@@ -1,0 +1,146 @@
+.hero {
+  background: linear-gradient(135deg, var(--color-green-dark) 0%, var(--color-green-mid) 100%);
+  color: var(--color-cream);
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  padding: 80px 24px;
+
+  .hero-content {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-family: 'Georgia', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    line-height: 1.15;
+    margin: 0 0 20px;
+  }
+
+  .hero-tagline {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    .btn-cream {
+      color: var(--color-cream) !important;
+      border-color: var(--color-cream) !important;
+    }
+  }
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 16px;
+
+  .category-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 16px;
+    background: var(--color-cream);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--color-green-dark);
+    font-weight: 600;
+    transition: border-color 0.2s, transform 0.2s;
+
+    mat-icon { font-size: 2rem; height: 2rem; width: 2rem; color: var(--color-brown); }
+
+    &:hover {
+      border-color: var(--color-green-mid);
+      transform: translateY(-3px);
+    }
+  }
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+
+  .product-card {
+    display: flex;
+    flex-direction: column;
+
+    .product-img {
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .product-category {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--color-brown);
+      margin: 0 0 4px;
+    }
+
+    .product-name {
+      font-family: 'Georgia', serif;
+      font-size: 1.1rem;
+      margin: 0 0 8px;
+      color: var(--color-green-dark);
+    }
+
+    .product-desc {
+      font-size: 0.85rem;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    mat-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 16px;
+      margin-top: auto;
+
+      .product-price {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--color-green-dark);
+
+        small { font-size: 0.75rem; font-weight: 400; color: #666; }
+      }
+    }
+  }
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 32px;
+  text-align: center;
+
+  .trust-item {
+    mat-icon {
+      font-size: 2.5rem;
+      height: 2.5rem;
+      width: 2.5rem;
+      color: var(--color-green-mid);
+      margin-bottom: 12px;
+    }
+
+    h4 {
+      font-family: 'Georgia', serif;
+      margin: 0 0 8px;
+      color: var(--color-green-dark);
+    }
+
+    p { color: #555; font-size: 0.9rem; line-height: 1.5; margin: 0; }
+  }
+}

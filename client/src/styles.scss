@@ -1,0 +1,161 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// --- Farm Gate colour palette ---
+// Deep green primary
+$fg-green: mat.define-palette((
+  50:  #e8f0e9,
+  100: #c5d9c7,
+  200: #9fc1a3,
+  300: #78a87e,
+  400: #5a9462,
+  500: #3b8147,   // base
+  600: #33733e,
+  700: #296134,
+  800: #1f4f29,
+  900: #12331a,
+  contrast: (
+    50: rgba(0,0,0,.87), 100: rgba(0,0,0,.87), 200: rgba(0,0,0,.87),
+    300: rgba(0,0,0,.87), 400: #fff, 500: #fff, 600: #fff, 700: #fff,
+    800: #fff, 900: #fff
+  )
+), 700, 500, 900);
+
+// Warm brown accent
+$fg-brown: mat.define-palette((
+  50:  #f5ede3,
+  100: #e7d2b9,
+  200: #d7b48c,
+  300: #c7965f,
+  400: #bb803d,
+  500: #af691b,
+  600: #9e5e17,
+  700: #884f12,
+  800: #72400e,
+  900: #4f2907,
+  contrast: (
+    50: rgba(0,0,0,.87), 100: rgba(0,0,0,.87), 200: rgba(0,0,0,.87),
+    300: rgba(0,0,0,.87), 400: #fff, 500: #fff, 600: #fff, 700: #fff,
+    800: #fff, 900: #fff
+  )
+), 500, 300, 700);
+
+$fg-warn: mat.define-palette(mat.$red-palette);
+
+$fg-theme: mat.define-light-theme((
+  color: (primary: $fg-green, accent: $fg-brown, warn: $fg-warn),
+  typography: mat.define-typography-config(
+    $font-family: 'Roboto, "Helvetica Neue", sans-serif'
+  ),
+  density: 0
+));
+
+@include mat.all-component-themes($fg-theme);
+
+// --- CSS custom properties (earthy palette) ---
+:root {
+  --color-green-dark:  #1f4f29;
+  --color-green-mid:   #3b8147;
+  --color-brown:       #af691b;
+  --color-cream:       #f7f2ea;
+  --color-text:        #1a1a1a;
+}
+
+// --- Reset & base ---
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  background: #fff;
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+// --- Layout helpers ---
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section-pad { padding: 56px 0; }
+
+.bg-cream { background: var(--color-cream); }
+
+.section-title {
+  font-family: 'Georgia', serif;
+  font-size: 1.75rem;
+  color: var(--color-green-dark);
+  margin: 0 0 32px;
+}
+
+// --- Shared product grid (used across home & browse) ---
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+
+  .product-card {
+    display: flex;
+    flex-direction: column;
+
+    .product-img {
+      height: 200px;
+      object-fit: cover;
+    }
+
+    mat-card-content { flex: 1; }
+
+    .product-category {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--color-brown);
+      margin: 0 0 4px;
+    }
+
+    .product-name {
+      font-family: 'Georgia', serif;
+      font-size: 1.05rem;
+      margin: 0 0 8px;
+      color: var(--color-green-dark);
+
+      a { color: inherit; text-decoration: none; &:hover { text-decoration: underline; } }
+    }
+
+    .product-desc {
+      font-size: 0.85rem;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    mat-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 16px;
+      margin-top: auto;
+
+      .product-price {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--color-green-dark);
+
+        small { font-size: 0.75rem; font-weight: 400; color: #888; }
+      }
+    }
+  }
+}
+
+// --- Material overrides ---
+.mat-mdc-raised-button.mat-primary {
+  background-color: var(--color-green-dark) !important;
+}
+
+a.mat-mdc-raised-button.mat-primary {
+  background-color: var(--color-green-dark) !important;
+  color: #fff !important;
+}

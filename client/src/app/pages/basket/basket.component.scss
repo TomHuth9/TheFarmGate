@@ -1,0 +1,103 @@
+.basket-page {
+  .page-title {
+    font-family: 'Georgia', serif;
+    color: var(--color-green-dark);
+    font-size: 2rem;
+    margin-bottom: 32px;
+  }
+
+  .empty-basket {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 80px 0;
+    color: #777;
+
+    mat-icon { font-size: 4rem; height: 4rem; width: 4rem; opacity: 0.4; }
+    p { font-size: 1.2rem; margin: 0; }
+  }
+
+  .basket-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 40px;
+    align-items: start;
+
+    @media (max-width: 900px) { grid-template-columns: 1fr; }
+  }
+
+  .basket-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #e8e0d4;
+
+    .basket-img {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .item-info {
+      flex: 1;
+      h3 { margin: 0 0 4px; font-size: 1rem; color: var(--color-green-dark); }
+      .item-unit { margin: 0; font-size: 0.8rem; color: #888; }
+    }
+
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      span { min-width: 24px; text-align: center; font-weight: 600; }
+    }
+
+    .item-price { font-weight: 700; color: var(--color-green-dark); min-width: 64px; text-align: right; }
+  }
+
+  .basket-summary {
+    background: var(--color-cream);
+    border: 1px solid #e0d5c4;
+    border-radius: 12px;
+    padding: 24px;
+    position: sticky;
+    top: 80px;
+
+    h2 { font-family: 'Georgia', serif; color: var(--color-green-dark); margin: 0 0 20px; }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0d5c4;
+      font-size: 0.95rem;
+
+      .free { color: var(--color-green-mid); font-weight: 600; }
+
+      &.total {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--color-green-dark);
+        border-bottom: none;
+      }
+    }
+
+    .checkout-btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px 0;
+      font-size: 1rem;
+    }
+
+    .continue-link {
+      display: block;
+      text-align: center;
+      margin-top: 8px;
+      color: var(--color-green-mid) !important;
+    }
+  }
+}
