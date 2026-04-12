@@ -58,7 +58,7 @@ This inserts two collection centres, 21 products across 6 categories, and a demo
 
 | Email                          | Password    | Role  |
 |--------------------------------|-------------|-------|
-| admin@thefarmgate.co.uk        | password123 | admin |
+| <admin@thefarmgate.co.uk>        | password123 | admin |
 
 ### 4. Run in development
 
@@ -77,20 +77,3 @@ Or run both concurrently from the root:
 ```bash
 npm run dev
 ```
-
----
-
-## API Reference
-
-| Method | Endpoint                        | Auth     | Description                   |
-|--------|---------------------------------|----------|-------------------------------|
-| POST   | /api/users/register             | —        | Register + receive JWT        |
-| POST   | /api/users/login                | —        | Login + receive JWT           |
-| GET    | /api/users/me                   | Bearer   | Current user profile          |
-| GET    | /api/products                   | —        | All products (opt ?category=) |
-| GET    | /api/products/:id               | —        | Single product                |
-| POST   | /api/products                   | Admin    | Create product                |
-| GET    | /api/orders/my                  | Bearer   | Current user's orders         |
-| POST   | /api/orders                     | Bearer   | Place order                   |
-| GET    | /api/centres                    | —        | All collection centres        |
-| GET    | /api/centres/lookup?postcode=   | —        | Find centre by postcode       |
