@@ -80,44 +80,6 @@ npm run dev
 
 ---
 
-## Project Structure
-
-```
-TheFarmGate/
-├── server/
-│   ├── app.js               # Express entry point
-│   ├── seed.js              # Database seed script
-│   ├── middleware/
-│   │   └── auth.js          # JWT protect + adminOnly guards
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Product.js
-│   │   ├── Order.js
-│   │   └── Centre.js
-│   └── routes/
-│       ├── users.js         # POST /register, POST /login, GET /me
-│       ├── products.js      # CRUD — public GET, admin POST/PUT/DELETE
-│       ├── orders.js        # POST (auth), GET /my (auth)
-│       └── centres.js       # GET all, GET /lookup?postcode=
-│
-└── client/src/app/
-    ├── models/              # TypeScript interfaces
-    ├── services/            # AuthService, ProductService, BasketService, OrderService
-    ├── interceptors/        # JWT auth interceptor
-    ├── components/
-    │   └── navbar/
-    └── pages/
-        ├── home/
-        ├── browse/          # ?category filter + route param /browse/:category
-        ├── product-detail/
-        ├── basket/
-        ├── checkout/
-        ├── login/           # Shared login + register tabs
-        └── order-confirmation/
-```
-
----
-
 ## API Reference
 
 | Method | Endpoint                        | Auth     | Description                   |
@@ -132,16 +94,3 @@ TheFarmGate/
 | POST   | /api/orders                     | Bearer   | Place order                   |
 | GET    | /api/centres                    | —        | All collection centres        |
 | GET    | /api/centres/lookup?postcode=   | —        | Find centre by postcode       |
-
----
-
-## Design
-
-Warm earthy palette built with CSS custom properties:
-
-| Variable              | Value     | Usage               |
-|-----------------------|-----------|---------------------|
-| `--color-green-dark`  | `#1f4f29` | Headers, CTAs       |
-| `--color-green-mid`   | `#3b8147` | Accents, icons      |
-| `--color-brown`       | `#af691b` | Category labels     |
-| `--color-cream`       | `#f7f2ea` | Backgrounds, cards  |
