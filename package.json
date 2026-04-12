@@ -1,0 +1,19 @@
+{
+  "name": "the-farm-gate",
+  "version": "1.0.0",
+  "scripts": {
+    "server": "cd server && npm run dev",
+    "client": "cd client && npx ng serve",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "seed": "cd server && node seed.js",
+    "test:server": "cd server && npm test",
+    "test:client": "cd client && npx ng test --watch=false --browsers=ChromeHeadless"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "mongodb": "^7.1.1"
+  }
+}
