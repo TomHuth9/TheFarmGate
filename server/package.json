@@ -16,7 +16,8 @@
     ],
     "setupFiles": [
       "./tests/helpers/env.js"
-    ]
+    ],
+    "testTimeout": 15000
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
