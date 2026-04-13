@@ -30,10 +30,10 @@ app.use(mongoSanitize());
 // --- Rate limiters (disabled in test environment to avoid flaky tests)
 const isTest = process.env.NODE_ENV === 'test';
 
-// Strict limiter for auth endpoints — 10 attempts per 15 min per IP
+// Strict limiter for auth endpoints — 5 attempts per 15 min per IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isTest ? 1000 : 10,
+  max: isTest ? 1000 : 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many attempts, please try again in 15 minutes' },
@@ -51,6 +51,8 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
+app.use('/api/users/forgot-password', authLimiter);
+app.use('/api/users/reset-password', authLimiter);
 
 // --- Routes
 app.use('/api/products', productRoutes);
