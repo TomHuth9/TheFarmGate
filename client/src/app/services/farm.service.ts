@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Farm } from '../models/user.model';
 import { Product } from '../models/product.model';
+import { environment } from '../../environments/environment';
 
 export interface FarmProfileResponse {
   farm: Farm;
@@ -11,7 +12,7 @@ export interface FarmProfileResponse {
 
 @Injectable({ providedIn: 'root' })
 export class FarmService {
-  private readonly API = 'http://localhost:3000/api/farms';
+  private readonly API = `${environment.apiUrl}/farms`;
 
   constructor(private http: HttpClient) {}
 

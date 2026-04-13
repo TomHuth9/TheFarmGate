@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ProductService } from './product.service';
 import { Product } from '../models/product.model';
+import { environment } from '../../environments/environment';
 
 const mockProduct = (): Product => ({
   _id: '1',
@@ -19,7 +20,7 @@ const mockProduct = (): Product => ({
 describe('ProductService', () => {
   let service: ProductService;
   let httpMock: HttpTestingController;
-  const BASE = 'http://localhost:3000/api/products';
+  const BASE = `${environment.apiUrl}/products`;
 
   beforeEach(() => {
     TestBed.configureTestingModule({

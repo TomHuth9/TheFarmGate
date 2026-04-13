@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -41,7 +42,7 @@ describe('AuthService', () => {
     it('stores the token and sets currentUser on success', () => {
       service.login('user@example.com', 'password123').subscribe();
 
-      const req = httpMock.expectOne('http://localhost:3000/api/users/login');
+      const req = httpMock.expectOne(`${environment.apiUrl}/users/login`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ email: 'user@example.com', password: 'password123' });
 
@@ -62,7 +63,7 @@ describe('AuthService', () => {
         .register('Bob', 'bob@farm.com', 'pass123', '', 'farm', 'Sunny Acres', 'A nice farm', 'Devon')
         .subscribe();
 
-      const req = httpMock.expectOne('http://localhost:3000/api/users/register');
+      const req = httpMock.expectOne(`${environment.apiUrl}/users/register`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body.role).toBe('farm');
       expect(req.request.body.farmName).toBe('Sunny Acres');
@@ -81,7 +82,7 @@ describe('AuthService', () => {
       // Seed a token
       localStorage.setItem('tfg_token', 'fake.jwt.token');
       service.login('user@example.com', 'pass').subscribe();
-      httpMock.expectOne('http://localhost:3000/api/users/login').flush({
+      httpMock.expectOne(`${environment.apiUrl}/users/login`).flush({
         token: 'fake.jwt.token',
         user: { id: '1', name: 'Alice', email: 'user@example.com', role: 'customer' },
       });

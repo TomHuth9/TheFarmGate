@@ -3,10 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Order } from '../models/order.model';
 import { BasketItem } from '../models/basket.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
-  private readonly API = 'http://localhost:3000/api/orders';
+  private readonly API = `${environment.apiUrl}/orders`;
 
   constructor(private http: HttpClient) {}
 

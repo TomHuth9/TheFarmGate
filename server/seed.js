@@ -81,7 +81,7 @@ async function seed() {
     password: 'password123',
     role: 'admin',
   });
-  console.log('Created admin: admin@thefarmgate.co.uk / password123');
+  console.log('Created admin: admin@thefarmgate.co.uk');
 
   // Demo farm account
   const demoFarm = await User.create({
@@ -93,7 +93,7 @@ async function seed() {
     farmDescription: 'A family-run mixed farm in the heart of Shropshire. We raise rare-breed cattle and grow heritage vegetables using traditional, low-input methods.',
     farmLocation: 'Shropshire, UK',
   });
-  console.log('Created demo farm: meadowview@thefarmgate.co.uk / password123');
+  console.log('Created demo farm: meadowview@thefarmgate.co.uk');
 
   // Demo farm products linked to that account
   const farmProducts = [

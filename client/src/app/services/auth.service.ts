@@ -3,10 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { User, AuthResponse } from '../models/user.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly API = 'http://localhost:3000/api/users';
+  private readonly API = `${environment.apiUrl}/users`;
   private readonly TOKEN_KEY = 'tfg_token';
 
   // Reactive signal for current user state

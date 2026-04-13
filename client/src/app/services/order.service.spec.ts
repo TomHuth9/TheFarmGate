@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { OrderService } from './order.service';
 import { BasketItem } from '../models/basket.model';
 import { Product } from '../models/product.model';
+import { environment } from '../../environments/environment';
 
 const mockBasketItem = (overrides: Partial<BasketItem> = {}): BasketItem => ({
   quantity: 2,
@@ -24,7 +25,7 @@ const mockBasketItem = (overrides: Partial<BasketItem> = {}): BasketItem => ({
 describe('OrderService', () => {
   let service: OrderService;
   let httpMock: HttpTestingController;
-  const BASE = 'http://localhost:3000/api/orders';
+  const BASE = `${environment.apiUrl}/orders`;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
