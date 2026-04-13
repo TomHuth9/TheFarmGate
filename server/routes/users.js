@@ -1,10 +1,12 @@
+const crypto = require('crypto');
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const User = require('../models/User');
 const Centre = require('../models/Centre');
 const { protect } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
+const { sendPasswordReset } = require('../utils/email');
 
 const router = express.Router();
 
@@ -98,6 +100,67 @@ router.get('/me', protect, async (req, res) => {
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: 'Could not fetch profile' });
+  }
+});
+
+// POST /api/users/forgot-password
+router.post('/forgot-password', [
+  body('email').trim().isEmail().withMessage('Valid email required').normalizeEmail(),
+  handleValidationErrors,
+], async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    // Always respond 200 — never reveal whether an email is registered
+    if (!user) {
+      return res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
+    }
+
+    // Generate a secure random token; store only the hash in the DB
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save({ validateBeforeSave: false });
+
+    const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:4200';
+    const resetUrl = `${clientOrigin}/reset-password/${rawToken}`;
+
+    await sendPasswordReset(user.email, resetUrl);
+
+    res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not process request' });
+  }
+});
+
+// POST /api/users/reset-password/:token
+router.post('/reset-password/:token', [
+  param('token').isHexadecimal().isLength({ min: 64, max: 64 }).withMessage('Invalid reset token'),
+  body('password').isLength({ min: 6, max: 128 }).withMessage('Password must be 6–128 characters'),
+  handleValidationErrors,
+], async (req, res) => {
+  try {
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Reset link is invalid or has expired.' });
+    }
+
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not reset password' });
   }
 });
 

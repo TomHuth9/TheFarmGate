@@ -14,6 +14,10 @@ const userSchema = new mongoose.Schema(
     farmName: { type: String, trim: true },
     farmDescription: { type: String },
     farmLocation: { type: String, trim: true }, // e.g. "Shropshire, UK"
+
+    // Password reset
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );
@@ -21,7 +25,8 @@ const userSchema = new mongoose.Schema(
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
+  const rounds = Number(process.env.BCRYPT_ROUNDS) || 12;
+  this.password = await bcrypt.hash(this.password, rounds);
   next();
 });
 

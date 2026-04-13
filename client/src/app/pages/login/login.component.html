@@ -24,6 +24,8 @@
             <button type="submit" mat-raised-button color="primary" [disabled]="loginForm.invalid || loading()">
               {{ loading() ? 'Signing in…' : 'Sign In' }}
             </button>
+
+            <a routerLink="/forgot-password" class="forgot-link">Forgot your password?</a>
           </form>
         </mat-tab>
 

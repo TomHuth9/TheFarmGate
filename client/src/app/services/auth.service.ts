@@ -37,6 +37,14 @@ export class AuthService {
       .pipe(tap((res) => this.handleAuth(res)));
   }
 
+  forgotPassword(email: string) {
+    return this.http.post(`${this.API}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, password: string) {
+    return this.http.post(`${this.API}/reset-password/${token}`, { password });
+  }
+
   logout() {
     localStorage.removeItem(this.TOKEN_KEY);
     this.currentUser.set(null);
