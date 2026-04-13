@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
+const { sanitizeInputs } = require('./middleware/sanitize');
 
 const productRoutes = require('./routes/products');
 const userRoutes = require('./routes/users');
@@ -21,11 +22,42 @@ app.use(cors({
   credentials: true,
 }));
 
+// --- Reject excessively long query strings
+app.use((req, res, next) => {
+  const q = req.originalUrl.indexOf('?');
+  if (q !== -1 && req.originalUrl.length - q > 500) {
+    return res.status(400).json({ message: 'Query string too long' });
+  }
+  next();
+});
+
+// --- Enforce application/json Content-Type on mutating requests
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    const ct = req.headers['content-type'] || '';
+    if (!ct.includes('application/json')) {
+      return res.status(415).json({ message: 'Content-Type must be application/json' });
+    }
+  }
+  next();
+});
+
 // --- Body parsing with a size limit to prevent payload flooding
 app.use(express.json({ limit: '10kb' }));
 
+// --- Catch malformed JSON before it reaches routes
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ message: 'Malformed JSON' });
+  }
+  next(err);
+});
+
 // --- Strip $ and . from request body/params to prevent NoSQL injection
 app.use(mongoSanitize());
+
+// --- Trim strings and strip null bytes / control characters from all inputs
+app.use(sanitizeInputs);
 
 // --- Rate limiters (disabled in test environment to avoid flaky tests)
 const isTest = process.env.NODE_ENV === 'test';

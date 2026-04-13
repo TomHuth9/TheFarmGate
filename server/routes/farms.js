@@ -1,6 +1,8 @@
 const express = require('express');
+const { param } = require('express-validator');
 const User = require('../models/User');
 const Product = require('../models/Product');
+const { handleValidationErrors } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -12,12 +14,15 @@ router.get('/', async (req, res) => {
       .sort({ farmName: 1 });
     res.json(farms);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Could not fetch farms' });
   }
 });
 
 // GET /api/farms/:id — farm profile + their products (public)
-router.get('/:id', async (req, res) => {
+router.get('/:id', [
+  param('id').isMongoId().withMessage('Invalid farm ID'),
+  handleValidationErrors,
+], async (req, res) => {
   try {
     const farm = await User.findOne({ _id: req.params.id, role: 'farm' })
       .select('farmName farmDescription farmLocation name createdAt');
@@ -28,7 +33,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({ farm, products });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Could not fetch farm' });
   }
 });
 

@@ -8,7 +8,7 @@ const { handleValidationErrors } = require('../middleware/validate');
 const router = express.Router();
 
 const orderRules = [
-  body('items').isArray({ min: 1 }).withMessage('Order must contain at least one item'),
+  body('items').isArray({ min: 1, max: 50 }).withMessage('Order must contain between 1 and 50 items'),
   body('items.*.product').isMongoId().withMessage('Each item must reference a valid product ID'),
   body('items.*.quantity').isInt({ min: 1, max: 100 }).withMessage('Quantity must be 1–100'),
   body('deliveryAddress.line1').trim().notEmpty().withMessage('Delivery address line 1 is required').isLength({ max: 200 }),
