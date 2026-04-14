@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly API = `${environment.apiUrl}/users`;
-  private readonly TOKEN_KEY = 'tfg_token';
+  private readonly USER_KEY = 'tfg_user';
 
   // Reactive signal for current user state
   currentUser = signal<User | null>(this.loadUserFromStorage());
@@ -47,34 +47,31 @@ export class AuthService {
   }
 
   logout() {
-    localStorage.removeItem(this.TOKEN_KEY);
+    this.http.post(`${this.API}/logout`, {}).subscribe({
+      complete: () => this.clearSession(),
+      error: () => this.clearSession(),
+    });
+  }
+
+  isLoggedIn(): boolean {
+    return this.currentUser() !== null;
+  }
+
+  private handleAuth(res: AuthResponse) {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
+    this.currentUser.set(res.user);
+  }
+
+  private clearSession() {
+    localStorage.removeItem(this.USER_KEY);
     this.currentUser.set(null);
     this.router.navigate(['/']);
   }
 
-  getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  isLoggedIn(): boolean {
-    return !!this.getToken();
-  }
-
-  private handleAuth(res: AuthResponse) {
-    localStorage.setItem(this.TOKEN_KEY, res.token);
-    this.currentUser.set(res.user);
-  }
-
   private loadUserFromStorage(): User | null {
-    const token = localStorage.getItem(this.TOKEN_KEY);
-    if (!token) return null;
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      if (payload.exp * 1000 < Date.now()) {
-        localStorage.removeItem(this.TOKEN_KEY);
-        return null;
-      }
-      return { id: payload.id, name: '', email: '', role: payload.role };
+      const stored = localStorage.getItem(this.USER_KEY);
+      return stored ? (JSON.parse(stored) as User) : null;
     } catch {
       return null;
     }

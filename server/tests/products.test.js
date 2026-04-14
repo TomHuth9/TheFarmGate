@@ -6,7 +6,7 @@ beforeAll(connectTestDB);
 afterAll(disconnectTestDB);
 afterEach(clearDB);
 
-// Helper: register a user and return token + id
+// Helper: register a user and return cookies + id
 async function registerUser(overrides = {}) {
   const defaults = {
     name: 'Test User',
@@ -16,10 +16,10 @@ async function registerUser(overrides = {}) {
   const res = await request(app)
     .post('/api/users/register')
     .send({ ...defaults, ...overrides });
-  return { token: res.body.token, id: res.body.user.id };
+  return { cookies: res.headers['set-cookie'], id: res.body.user.id };
 }
 
-// Helper: register a farm account and return token + id
+// Helper: register a farm account and return cookies + id
 async function registerFarm(overrides = {}) {
   return registerUser({
     name: 'Farm Owner',
@@ -40,16 +40,16 @@ describe('GET /api/products', () => {
   });
 
   it('filters by category', async () => {
-    const { token } = await registerFarm();
+    const { cookies } = await registerFarm();
 
     await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ name: 'Milk', description: 'Fresh milk', price: 1.5, category: 'Dairy', unit: 'per litre' });
 
     await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ name: 'Steak', description: 'Fine ribeye steak', price: 18, category: 'Beef', unit: 'per 300g' });
 
     const res = await request(app).get('/api/products?category=Dairy');
@@ -64,12 +64,12 @@ describe('GET /api/products', () => {
 
     await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${farm1.token}`)
+      .set('Cookie', farm1.cookies)
       .send({ name: 'Milk', description: 'Fresh organic', price: 1.5, category: 'Dairy', unit: 'per litre' });
 
     await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${farm2.token}`)
+      .set('Cookie', farm2.cookies)
       .send({ name: 'Eggs', description: 'Free range', price: 3, category: 'Eggs', unit: 'per dozen' });
 
     const res = await request(app).get(`/api/products?farm=${farm1.id}`);
@@ -81,11 +81,11 @@ describe('GET /api/products', () => {
 
 describe('GET /api/products/:id', () => {
   it('returns a single product with farm info populated', async () => {
-    const { token } = await registerFarm();
+    const { cookies } = await registerFarm();
 
     const created = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ name: 'Milk', description: 'Fresh organic', price: 1.5, category: 'Dairy', unit: 'per litre' });
 
     const res = await request(app).get(`/api/products/${created.body._id}`);
@@ -103,11 +103,11 @@ describe('GET /api/products/:id', () => {
 
 describe('POST /api/products', () => {
   it('allows a farm to create a product', async () => {
-    const { token } = await registerFarm();
+    const { cookies } = await registerFarm();
 
     const res = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ name: 'Eggs', description: 'Free range', price: 3, category: 'Eggs', unit: 'per dozen' });
 
     expect(res.status).toBe(201);
@@ -116,11 +116,11 @@ describe('POST /api/products', () => {
   });
 
   it('returns 403 for a customer', async () => {
-    const { token } = await registerUser();
+    const { cookies } = await registerUser();
 
     const res = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ name: 'Eggs', description: 'Free range', price: 3, category: 'Eggs', unit: 'per dozen' });
 
     expect(res.status).toBe(403);
@@ -137,16 +137,16 @@ describe('POST /api/products', () => {
 
 describe('PUT /api/products/:id', () => {
   it('allows a farm to edit its own product', async () => {
-    const { token } = await registerFarm();
+    const { cookies } = await registerFarm();
 
     const created = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ name: 'Eggs', description: 'Free range', price: 3, category: 'Eggs', unit: 'per dozen' });
 
     const res = await request(app)
       .put(`/api/products/${created.body._id}`)
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ price: 3.50 });
 
     expect(res.status).toBe(200);
@@ -159,12 +159,12 @@ describe('PUT /api/products/:id', () => {
 
     const created = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${farm1.token}`)
+      .set('Cookie', farm1.cookies)
       .send({ name: 'Eggs', description: 'Free range', price: 3, category: 'Eggs', unit: 'per dozen' });
 
     const res = await request(app)
       .put(`/api/products/${created.body._id}`)
-      .set('Authorization', `Bearer ${farm2.token}`)
+      .set('Cookie', farm2.cookies)
       .send({ price: 99 });
 
     expect(res.status).toBe(403);
@@ -173,16 +173,16 @@ describe('PUT /api/products/:id', () => {
 
 describe('DELETE /api/products/:id', () => {
   it('allows a farm to delete its own product', async () => {
-    const { token } = await registerFarm();
+    const { cookies } = await registerFarm();
 
     const created = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ name: 'Eggs', description: 'Free range', price: 3, category: 'Eggs', unit: 'per dozen' });
 
     const res = await request(app)
       .delete(`/api/products/${created.body._id}`)
-      .set('Authorization', `Bearer ${token}`);
+      .set('Cookie', cookies);
 
     expect(res.status).toBe(200);
 
@@ -197,12 +197,12 @@ describe('DELETE /api/products/:id', () => {
 
     const created = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${farm1.token}`)
+      .set('Cookie', farm1.cookies)
       .send({ name: 'Eggs', description: 'Free range', price: 3, category: 'Eggs', unit: 'per dozen' });
 
     const res = await request(app)
       .delete(`/api/products/${created.body._id}`)
-      .set('Authorization', `Bearer ${farm2.token}`);
+      .set('Cookie', farm2.cookies);
 
     expect(res.status).toBe(403);
   });

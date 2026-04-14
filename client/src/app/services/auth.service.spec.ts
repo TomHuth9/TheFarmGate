@@ -39,7 +39,7 @@ describe('AuthService', () => {
   });
 
   describe('login()', () => {
-    it('stores the token and sets currentUser on success', () => {
+    it('stores user info and sets currentUser on success', () => {
       service.login('user@example.com', 'password123').subscribe();
 
       const req = httpMock.expectOne(`${environment.apiUrl}/users/login`);
@@ -47,11 +47,11 @@ describe('AuthService', () => {
       expect(req.request.body).toEqual({ email: 'user@example.com', password: 'password123' });
 
       req.flush({
-        token: 'fake.jwt.token',
         user: { id: '123', name: 'Alice', email: 'user@example.com', role: 'customer' },
       });
 
-      expect(localStorage.getItem('tfg_token')).toBe('fake.jwt.token');
+      const stored = JSON.parse(localStorage.getItem('tfg_user')!);
+      expect(stored.email).toBe('user@example.com');
       expect(service.isLoggedIn()).toBeTrue();
       expect(service.currentUser()?.email).toBe('user@example.com');
     });
@@ -69,7 +69,6 @@ describe('AuthService', () => {
       expect(req.request.body.farmName).toBe('Sunny Acres');
 
       req.flush({
-        token: 'fake.jwt.token',
         user: { id: '456', name: 'Bob', email: 'bob@farm.com', role: 'farm', farmName: 'Sunny Acres' },
       });
 
@@ -78,31 +77,18 @@ describe('AuthService', () => {
   });
 
   describe('logout()', () => {
-    it('clears the token and currentUser', () => {
-      // Seed a token
-      localStorage.setItem('tfg_token', 'fake.jwt.token');
+    it('clears user info and currentUser', () => {
       service.login('user@example.com', 'pass').subscribe();
       httpMock.expectOne(`${environment.apiUrl}/users/login`).flush({
-        token: 'fake.jwt.token',
         user: { id: '1', name: 'Alice', email: 'user@example.com', role: 'customer' },
       });
 
       service.logout();
+      httpMock.expectOne(`${environment.apiUrl}/users/logout`).flush({});
 
-      expect(localStorage.getItem('tfg_token')).toBeNull();
+      expect(localStorage.getItem('tfg_user')).toBeNull();
       expect(service.isLoggedIn()).toBeFalse();
       expect(service.currentUser()).toBeNull();
-    });
-  });
-
-  describe('getToken()', () => {
-    it('returns the token from localStorage', () => {
-      localStorage.setItem('tfg_token', 'my-token');
-      expect(service.getToken()).toBe('my-token');
-    });
-
-    it('returns null when no token is stored', () => {
-      expect(service.getToken()).toBeNull();
     });
   });
 });

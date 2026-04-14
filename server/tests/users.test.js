@@ -9,7 +9,7 @@ afterAll(disconnectTestDB);
 afterEach(clearDB);
 
 describe('POST /api/users/register', () => {
-  it('creates a customer account and returns a JWT', async () => {
+  it('creates a customer account and sets an auth cookie', async () => {
     const res = await request(app).post('/api/users/register').send({
       name: 'Alice',
       email: 'alice@example.com',
@@ -17,7 +17,8 @@ describe('POST /api/users/register', () => {
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.token).toBeDefined();
+    expect(res.body.token).toBeUndefined();
+    expect(res.headers['set-cookie']).toBeDefined();
     expect(res.body.user.email).toBe('alice@example.com');
     expect(res.body.user.role).toBe('customer');
     expect(res.body.user).not.toHaveProperty('password');
@@ -88,14 +89,16 @@ describe('POST /api/users/login', () => {
     });
   });
 
-  it('returns a token on valid credentials', async () => {
+  it('sets an auth cookie on valid credentials', async () => {
     const res = await request(app).post('/api/users/login').send({
       email: 'alice@example.com',
       password: 'password123',
     });
 
     expect(res.status).toBe(200);
-    expect(res.body.token).toBeDefined();
+    expect(res.body.token).toBeUndefined();
+    expect(res.headers['set-cookie']).toBeDefined();
+    expect(res.body.user.email).toBe('alice@example.com');
   });
 
   it('returns 401 for wrong password', async () => {
@@ -203,7 +206,7 @@ describe('POST /api/users/reset-password/:token', () => {
       .send({ email: 'alice@example.com', password: 'newpassword123' });
 
     expect(login.status).toBe(200);
-    expect(login.body.token).toBeDefined();
+    expect(login.headers['set-cookie']).toBeDefined();
   });
 
   it('rejects the old password after reset', async () => {
@@ -270,17 +273,17 @@ describe('POST /api/users/reset-password/:token', () => {
 });
 
 describe('GET /api/users/me', () => {
-  it('returns the user profile for a valid token', async () => {
+  it('returns the user profile for a valid cookie', async () => {
     const reg = await request(app).post('/api/users/register').send({
       name: 'Alice',
       email: 'alice@example.com',
       password: 'password123',
     });
-    const { token } = reg.body;
+    const cookies = reg.headers['set-cookie'];
 
     const res = await request(app)
       .get('/api/users/me')
-      .set('Authorization', `Bearer ${token}`);
+      .set('Cookie', cookies);
 
     expect(res.status).toBe(200);
     expect(res.body.email).toBe('alice@example.com');

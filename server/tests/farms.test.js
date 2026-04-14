@@ -17,7 +17,7 @@ async function createFarm(overrides = {}) {
     farmLocation: 'Herefordshire, UK',
     ...overrides,
   });
-  return { token: res.body.token, id: res.body.user.id };
+  return { cookies: res.headers['set-cookie'], id: res.body.user.id };
 }
 
 describe('GET /api/farms', () => {
@@ -48,11 +48,11 @@ describe('GET /api/farms', () => {
 
 describe('GET /api/farms/:id', () => {
   it('returns the farm profile and its products', async () => {
-    const { token, id } = await createFarm();
+    const { cookies, id } = await createFarm();
 
     await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', cookies)
       .send({ name: 'Free-Range Eggs', description: 'Lovely eggs', price: 3, category: 'Eggs', unit: 'per dozen' });
 
     const res = await request(app).get(`/api/farms/${id}`);

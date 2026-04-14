@@ -13,6 +13,19 @@ const router = express.Router();
 const signToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+// Cookie options — httpOnly so JavaScript cannot read the token
+const cookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days — matches JWT expiry
+  path: '/',
+});
+
+function setAuthCookie(res, token) {
+  res.cookie('token', token, cookieOptions());
+}
+
 // Validation chains
 const registerRules = [
   body('name').trim().notEmpty().withMessage('Name is required').isLength({ max: 100 }).withMessage('Name too long'),
@@ -52,20 +65,14 @@ router.post('/register', registerRules, handleValidationErrors, async (req, res)
     }
 
     const user = await User.create({
-      name,
-      email,
-      password,
-      postcode,
-      assignedCentre,
-      role: safeRole,
-      farmName,
-      farmDescription,
-      farmLocation,
+      name, email, password, postcode, assignedCentre,
+      role: safeRole, farmName, farmDescription, farmLocation,
     });
 
     const token = signToken(user);
+    setAuthCookie(res, token);
+
     res.status(201).json({
-      token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role, farmName: user.farmName },
     });
   } catch (err) {
@@ -84,8 +91,9 @@ router.post('/login', loginRules, handleValidationErrors, async (req, res) => {
     }
 
     const token = signToken(user);
+    setAuthCookie(res, token);
+
     res.json({
-      token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role, farmName: user.farmName },
     });
   } catch (err) {
@@ -93,11 +101,17 @@ router.post('/login', loginRules, handleValidationErrors, async (req, res) => {
   }
 });
 
+// POST /api/users/logout
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', { path: '/' });
+  res.json({ message: 'Logged out' });
+});
+
 // GET /api/users/me
 router.get('/me', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('-password -resetPasswordToken -resetPasswordExpires')
+      .select('-password -resetPasswordToken -resetPasswordExpires -passwordChangedAt')
       .populate('assignedCentre');
     res.json(user);
   } catch (err) {
@@ -158,6 +172,8 @@ router.post('/reset-password/:token', [
     user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
+    // Record when the password changed so protect() can reject older tokens
+    user.passwordChangedAt = new Date();
     await user.save();
 
     res.json({ message: 'Password updated successfully.' });

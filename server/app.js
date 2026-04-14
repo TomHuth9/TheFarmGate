@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 const { sanitizeInputs } = require('./middleware/sanitize');
@@ -41,6 +42,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// --- Parse cookies (required for httpOnly JWT cookie auth)
+app.use(cookieParser());
 
 // --- Body parsing with a size limit to prevent payload flooding
 app.use(express.json({ limit: '10kb' }));
