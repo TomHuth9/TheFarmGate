@@ -14,7 +14,7 @@ const productRules = [
   body('price').isFloat({ min: 0.01, max: 10000 }).withMessage('Price must be between £0.01 and £10,000'),
   body('category').isIn(CATEGORIES).withMessage(`Category must be one of: ${CATEGORIES.join(', ')}`),
   body('unit').trim().notEmpty().withMessage('Unit is required').isLength({ max: 50 }),
-  body('imageUrl').optional({ checkFalsy: true }).trim().isURL().withMessage('Image must be a valid URL'),
+  body('imageUrl').optional({ checkFalsy: true }).trim().isURL({ protocols: ['http', 'https'], require_protocol: true }).withMessage('Image must be a valid http/https URL'),
   body('stock').optional().isInt({ min: 0, max: 99999 }).withMessage('Stock must be 0–99,999'),
 ];
 

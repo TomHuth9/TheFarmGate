@@ -96,7 +96,9 @@ router.post('/login', loginRules, handleValidationErrors, async (req, res) => {
 // GET /api/users/me
 router.get('/me', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password').populate('assignedCentre');
+    const user = await User.findById(req.user.id)
+      .select('-password -resetPasswordToken -resetPasswordExpires')
+      .populate('assignedCentre');
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: 'Could not fetch profile' });
