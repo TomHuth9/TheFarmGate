@@ -39,6 +39,10 @@ export class OrderService {
     return this.http.get<Order>(`${this.API}/${id}`);
   }
 
+  getAllOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(this.API);
+  }
+
   getFarmOrders(): Observable<Order[]> {
     return this.http.get<Order[]>(`${this.API}/farm`);
   }

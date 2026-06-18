@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body, param } = require('express-validator');
 const User = require('../models/User');
 const Centre = require('../models/Centre');
-const { protect } = require('../middleware/auth');
+const { protect, adminOnly } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
 const { sendPasswordReset } = require('../utils/email');
 
@@ -179,6 +179,62 @@ router.post('/reset-password/:token', [
     res.json({ message: 'Password updated successfully.' });
   } catch (err) {
     res.status(500).json({ message: 'Could not reset password' });
+  }
+});
+
+// GET /api/users — admin: list all users
+router.get('/', protect, adminOnly, async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('-password -resetPasswordToken -resetPasswordExpires -passwordChangedAt')
+      .sort({ createdAt: -1 });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Could not fetch users' });
+  }
+});
+
+// PATCH /api/users/:id/role — admin: change a user's role
+router.patch('/:id/role', protect, adminOnly, [
+  param('id').isMongoId().withMessage('Invalid user ID'),
+  body('role').isIn(['customer', 'farm', 'admin']).withMessage('Invalid role'),
+  handleValidationErrors,
+], async (req, res) => {
+  try {
+    if (req.params.id === req.user.id) {
+      return res.status(403).json({ message: 'Cannot change your own role' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role: req.body.role },
+      { new: true }
+    ).select('-password -resetPasswordToken -resetPasswordExpires -passwordChangedAt');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'Could not update role' });
+  }
+});
+
+// DELETE /api/users/:id — admin: delete a user
+router.delete('/:id', protect, adminOnly, [
+  param('id').isMongoId().withMessage('Invalid user ID'),
+  handleValidationErrors,
+], async (req, res) => {
+  try {
+    if (req.params.id === req.user.id) {
+      return res.status(403).json({ message: 'Cannot delete your own account' });
+    }
+
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not delete user' });
   }
 });
 
