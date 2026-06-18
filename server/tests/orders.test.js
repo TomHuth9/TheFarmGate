@@ -93,7 +93,7 @@ describe('POST /api/orders', () => {
     expect(res.status).toBe(422);
   });
 
-  it('returns 400 when delivery address is missing', async () => {
+  it('returns 422 when delivery address is missing', async () => {
     const farm = await registerFarm();
     const product = await createProduct(farm.cookies);
     const { cookies } = await registerUser();
@@ -102,7 +102,7 @@ describe('POST /api/orders', () => {
       .post('/api/orders')
       .set('Cookie', cookies)
       .send({ items: [{ product: product._id, quantity: 1 }] });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
   });
 });
 
@@ -255,7 +255,7 @@ describe('PATCH /api/orders/:id/status', () => {
     expect(res.status).toBe(403);
   });
 
-  it('returns 400 for an invalid status value', async () => {
+  it('returns 422 for an invalid status value', async () => {
     const farm = await registerFarm();
     const product = await createProduct(farm.cookies);
     const customer = await registerUser();
@@ -266,7 +266,7 @@ describe('PATCH /api/orders/:id/status', () => {
       .set('Cookie', farm.cookies)
       .send({ status: 'shipped' });
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
   });
 
   it('returns 404 for a non-existent order id', async () => {
