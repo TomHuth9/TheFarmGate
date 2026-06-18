@@ -31,6 +31,8 @@ module.exports = defineConfig([
           style: "kebab-case",
         },
       ],
+      // Codebase uses constructor injection consistently — not enforcing inject() migration here
+      "@angular-eslint/prefer-inject": "off",
     },
   },
   {

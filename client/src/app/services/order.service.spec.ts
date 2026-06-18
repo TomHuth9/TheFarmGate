@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { OrderService } from './order.service';
+import { Order } from '../models/order.model';
 import { BasketItem } from '../models/basket.model';
 import { Product } from '../models/product.model';
 import { environment } from '../../environments/environment';
@@ -94,7 +95,7 @@ describe('OrderService', () => {
 
     it('returns the response body as an Order array', () => {
       const mockOrder = { _id: 'o1', total: 3.00, status: 'pending' as const, items: [], createdAt: '' };
-      let result: any;
+      let result: Order[];
       service.getFarmOrders().subscribe((orders) => (result = orders));
       httpMock.expectOne(`${BASE}/farm`).flush([mockOrder]);
       expect(result).toHaveSize(1);
@@ -113,7 +114,7 @@ describe('OrderService', () => {
 
     it('returns the updated order', () => {
       const updated = { _id: 'order123', total: 3.00, status: 'dispatched' as const, items: [], createdAt: '' };
-      let result: any;
+      let result: Order;
       service.updateStatus('order123', 'dispatched').subscribe((o) => (result = o));
       httpMock.expectOne(`${BASE}/order123/status`).flush(updated);
       expect(result.status).toBe('dispatched');
