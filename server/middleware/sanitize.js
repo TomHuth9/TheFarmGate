@@ -6,6 +6,7 @@ const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 // Strips null bytes and ASCII control characters that have no place in text input.
 // Keeps tab (0x09), line feed (0x0A), carriage return (0x0D) — valid in multiline fields.
 // Removes everything else in 0x00–0x1F, plus DEL (0x7F).
+// eslint-disable-next-line no-control-regex
 const CONTROL_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 
 function sanitizeValue(value) {
