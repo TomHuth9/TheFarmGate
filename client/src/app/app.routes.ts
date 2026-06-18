@@ -8,6 +8,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { OrderConfirmationComponent } from './pages/order-confirmation/order-confirmation.component';
 import { FarmDashboardComponent } from './pages/farm-dashboard/farm-dashboard.component';
 import { FarmProfileComponent } from './pages/farm-profile/farm-profile.component';
+import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
 
@@ -24,6 +25,7 @@ export const routes: Routes = [
   { path: 'reset-password/:token', component: ResetPasswordComponent },
   { path: 'order-confirmation/:id', component: OrderConfirmationComponent },
   { path: 'farm-dashboard', component: FarmDashboardComponent },
+  { path: 'admin-dashboard', component: AdminDashboardComponent },
   { path: 'farms/:id', component: FarmProfileComponent },
   { path: '**', redirectTo: '' },
 ];

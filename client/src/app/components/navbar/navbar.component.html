@@ -29,6 +29,11 @@
         <mat-icon>storefront</mat-icon> My Dashboard
       </a>
     }
+    @if (auth.currentUser()?.role === 'admin') {
+      <a mat-button routerLink="/admin-dashboard" class="dashboard-link">
+        <mat-icon>admin_panel_settings</mat-icon> Admin
+      </a>
+    }
     <button type="button" mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Account">
       <mat-icon>account_circle</mat-icon>
     </button>
@@ -37,6 +42,12 @@
         <button type="button" mat-menu-item routerLink="/farm-dashboard">
           <mat-icon>storefront</mat-icon>
           <span>My Dashboard</span>
+        </button>
+      }
+      @if (auth.currentUser()?.role === 'admin') {
+        <button type="button" mat-menu-item routerLink="/admin-dashboard">
+          <mat-icon>admin_panel_settings</mat-icon>
+          <span>Admin Dashboard</span>
         </button>
       }
       <button type="button" mat-menu-item (click)="auth.logout()">

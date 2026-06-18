@@ -1,0 +1,139 @@
+<div class="dashboard-page section-pad">
+  <div class="container">
+    <div class="dashboard-header">
+      <div>
+        <h1 class="page-title">Admin Dashboard</h1>
+        <p class="subtitle">Manage orders, products, and users</p>
+      </div>
+    </div>
+
+    <mat-tab-group animationDuration="0ms" class="dashboard-tabs">
+
+      <!-- ORDERS TAB -->
+      <mat-tab label="Orders">
+        <div class="tab-content">
+          @if (orders().length === 0) {
+            <div class="empty-state">
+              <mat-icon>receipt_long</mat-icon>
+              <p>No orders have been placed yet.</p>
+            </div>
+          } @else {
+            <div class="row-list">
+              @for (order of orders(); track order._id) {
+                <div class="data-row">
+                  <div class="row-meta">
+                    <span class="row-primary">{{ order.user?.email ?? 'Customer' }}</span>
+                    <span class="row-secondary">{{ order.createdAt | date:'d MMM y, HH:mm' }}</span>
+                  </div>
+                  <div class="row-detail">
+                    @for (item of order.items; track item.product; let last = $last) {
+                      <span>{{ item.name }} ×{{ item.quantity }}{{ last ? '' : ', ' }}</span>
+                    }
+                  </div>
+                  <span class="row-amount">{{ order.total | currency:'GBP' }}</span>
+                  <div class="row-action-cell">
+                    @if (updatingOrderId() === order._id) {
+                      <mat-spinner diameter="24"></mat-spinner>
+                    } @else {
+                      <mat-form-field appearance="outline" class="inline-select">
+                        <mat-select [value]="order.status"
+                          (selectionChange)="updateOrderStatus(order, $event.value)"
+                          aria-label="Order status">
+                          @for (s of orderStatuses; track s) {
+                            <mat-option [value]="s">{{ s | titlecase }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- PRODUCTS TAB -->
+      <mat-tab label="Products">
+        <div class="tab-content">
+          @if (products().length === 0) {
+            <div class="empty-state">
+              <mat-icon>storefront</mat-icon>
+              <p>No products listed yet.</p>
+            </div>
+          } @else {
+            <div class="row-list">
+              @for (p of products(); track p._id) {
+                <div class="data-row">
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl" [alt]="p.name" [title]="p.name" class="thumb" />
+                  } @else {
+                    <div class="thumb thumb-placeholder"><mat-icon>image</mat-icon></div>
+                  }
+                  <div class="row-meta">
+                    <span class="row-primary">{{ p.name }}</span>
+                    <span class="row-secondary">{{ p.category }}{{ p.farm?.farmName ? ' · ' + p.farm!.farmName : '' }}</span>
+                  </div>
+                  <span class="row-amount">{{ p.price | currency:'GBP' }}</span>
+                  <div class="row-action-cell">
+                    <button type="button" mat-icon-button color="warn"
+                      (click)="deleteProduct(p)" aria-label="Delete product">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- USERS TAB -->
+      <mat-tab label="Users">
+        <div class="tab-content">
+          @if (users().length === 0) {
+            <div class="empty-state">
+              <mat-icon>people</mat-icon>
+              <p>No users found.</p>
+            </div>
+          } @else {
+            <div class="row-list">
+              @for (u of users(); track u._id) {
+                <div class="data-row">
+                  <div class="row-meta">
+                    <span class="row-primary">{{ u.name }}</span>
+                    <span class="row-secondary">{{ u.email }}</span>
+                  </div>
+                  <span class="row-detail">Joined {{ u.createdAt | date:'d MMM y' }}</span>
+                  <div class="row-action-cell">
+                    @if (updatingUserId() === u._id) {
+                      <mat-spinner diameter="24"></mat-spinner>
+                    } @else {
+                      <mat-form-field appearance="outline" class="inline-select"
+                        [class.disabled-field]="u._id === currentUserId">
+                        <mat-select [value]="u.role"
+                          (selectionChange)="updateUserRole(u, $event.value)"
+                          [disabled]="u._id === currentUserId"
+                          aria-label="User role">
+                          @for (r of userRoles; track r) {
+                            <mat-option [value]="r">{{ r | titlecase }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                    }
+                    <button type="button" mat-icon-button color="warn"
+                      [disabled]="u._id === currentUserId"
+                      (click)="deleteUser(u)" aria-label="Delete user">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </div>
+</div>
