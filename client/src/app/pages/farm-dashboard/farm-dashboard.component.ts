@@ -8,10 +8,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { CurrencyPipe } from '@angular/common';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ProductService } from '../../services/product.service';
 import { AuthService } from '../../services/auth.service';
+import { OrderService } from '../../services/order.service';
 import { Product } from '../../models/product.model';
+import { Order } from '../../models/order.model';
 
 const CATEGORIES = ['Dairy', 'Beef', 'Pork', 'Vegetables', 'Eggs', 'Poultry'] as const;
 
@@ -19,15 +23,16 @@ const CATEGORIES = ['Dairy', 'Beef', 'Pork', 'Vegetables', 'Eggs', 'Poultry'] as
   selector: 'app-farm-dashboard',
   standalone: true,
   imports: [
-    RouterLink, ReactiveFormsModule, CurrencyPipe,
+    RouterLink, ReactiveFormsModule, CurrencyPipe, DatePipe,
     MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatIconModule, MatDialogModule,
+    MatSelectModule, MatIconModule, MatDialogModule, MatTabsModule, MatProgressSpinnerModule,
   ],
   templateUrl: './farm-dashboard.component.html',
   styleUrl: './farm-dashboard.component.scss',
 })
 export class FarmDashboardComponent implements OnInit {
   private productService = inject(ProductService);
+  private orderService = inject(OrderService);
   private auth = inject(AuthService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
@@ -37,6 +42,11 @@ export class FarmDashboardComponent implements OnInit {
   editingId = signal<string | null>(null);
   saving = signal(false);
   error = signal('');
+
+  orders = signal<Order[]>([]);
+  updatingOrderId = signal<string | null>(null);
+
+  readonly statuses: Order['status'][] = ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
 
   readonly categories = CATEGORIES;
 
@@ -58,6 +68,22 @@ export class FarmDashboardComponent implements OnInit {
       return;
     }
     this.loadProducts();
+    this.loadOrders();
+  }
+
+  loadOrders() {
+    this.orderService.getFarmOrders().subscribe((o) => this.orders.set(o));
+  }
+
+  updateStatus(order: Order, newStatus: string) {
+    this.updatingOrderId.set(order._id);
+    this.orderService.updateStatus(order._id, newStatus).subscribe({
+      next: (updated) => {
+        this.orders.update((list) => list.map((o) => (o._id === updated._id ? updated : o)));
+        this.updatingOrderId.set(null);
+      },
+      error: () => this.updatingOrderId.set(null),
+    });
   }
 
   loadProducts() {

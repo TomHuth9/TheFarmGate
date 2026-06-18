@@ -2,7 +2,7 @@ const express = require('express');
 const { body, param } = require('express-validator');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, adminOnly, farmOrAdmin } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
 
 const router = express.Router();
@@ -70,6 +70,49 @@ router.get('/my', protect, async (req, res) => {
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: 'Could not fetch orders' });
+  }
+});
+
+// GET /api/orders/farm — returns orders containing products owned by this farm user
+router.get('/farm', protect, farmOrAdmin, async (req, res) => {
+  try {
+    const farmProducts = await Product.find({ farm: req.user.id }).select('_id');
+    const productIds = farmProducts.map((p) => p._id);
+
+    const orders = await Order.find({ 'items.product': { $in: productIds } })
+      .populate('user', 'name email')
+      .populate('items.product', 'name imageUrl')
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: 'Could not fetch farm orders' });
+  }
+});
+
+// PATCH /api/orders/:id/status — update order status (farm must own at least one item)
+router.patch('/:id/status', protect, farmOrAdmin, [
+  param('id').isMongoId().withMessage('Invalid order ID'),
+  body('status')
+    .isIn(['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'])
+    .withMessage('Invalid status value'),
+  handleValidationErrors,
+], async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (req.user.role !== 'admin') {
+      const productIds = order.items.map((i) => i.product);
+      const owned = await Product.findOne({ _id: { $in: productIds }, farm: req.user.id });
+      if (!owned) return res.status(403).json({ message: 'Not authorised to update this order' });
+    }
+
+    order.status = req.body.status;
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: 'Could not update order status' });
   }
 });
 

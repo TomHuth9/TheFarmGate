@@ -38,4 +38,12 @@ export class OrderService {
   getById(id: string): Observable<Order> {
     return this.http.get<Order>(`${this.API}/${id}`);
   }
+
+  getFarmOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(`${this.API}/farm`);
+  }
+
+  updateStatus(id: string, status: string): Observable<Order> {
+    return this.http.patch<Order>(`${this.API}/${id}/status`, { status });
+  }
 }
