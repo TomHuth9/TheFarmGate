@@ -83,4 +83,40 @@ describe('OrderService', () => {
       req.flush({ _id: 'order123', total: 9.00, status: 'pending', items: [], createdAt: '' });
     });
   });
+
+  describe('getFarmOrders()', () => {
+    it('fetches orders from the /farm endpoint', () => {
+      service.getFarmOrders().subscribe();
+      const req = httpMock.expectOne(`${BASE}/farm`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+
+    it('returns the response body as an Order array', () => {
+      const mockOrder = { _id: 'o1', total: 3.00, status: 'pending' as const, items: [], createdAt: '' };
+      let result: any;
+      service.getFarmOrders().subscribe((orders) => (result = orders));
+      httpMock.expectOne(`${BASE}/farm`).flush([mockOrder]);
+      expect(result).toHaveSize(1);
+      expect(result[0]._id).toBe('o1');
+    });
+  });
+
+  describe('updateStatus()', () => {
+    it('sends a PATCH to /orders/:id/status with the status in the body', () => {
+      service.updateStatus('order123', 'confirmed').subscribe();
+      const req = httpMock.expectOne(`${BASE}/order123/status`);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ status: 'confirmed' });
+      req.flush({ _id: 'order123', total: 3.00, status: 'confirmed', items: [], createdAt: '' });
+    });
+
+    it('returns the updated order', () => {
+      const updated = { _id: 'order123', total: 3.00, status: 'dispatched' as const, items: [], createdAt: '' };
+      let result: any;
+      service.updateStatus('order123', 'dispatched').subscribe((o) => (result = o));
+      httpMock.expectOne(`${BASE}/order123/status`).flush(updated);
+      expect(result.status).toBe('dispatched');
+    });
+  });
 });
