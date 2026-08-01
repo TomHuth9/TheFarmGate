@@ -15,7 +15,7 @@ import { ProductService } from '../../services/product.service';
 import { AuthService } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
 import { Product } from '../../models/product.model';
-import { Order } from '../../models/order.model';
+import { Order, OrderStatus, VALID_TRANSITIONS } from '../../models/order.model';
 
 const CATEGORIES = ['Dairy', 'Beef', 'Pork', 'Vegetables', 'Eggs', 'Poultry'] as const;
 
@@ -49,7 +49,15 @@ export class FarmDashboardComponent implements OnInit {
   orders = signal<Order[]>([]);
   updatingOrderId = signal<string | null>(null);
 
-  readonly statuses: Order['status'][] = ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
+  readonly statuses: OrderStatus[] = ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
+
+  isValidTransition(from: OrderStatus, to: OrderStatus): boolean {
+    return VALID_TRANSITIONS[from].includes(to);
+  }
+
+  hasValidTransitions(status: OrderStatus): boolean {
+    return VALID_TRANSITIONS[status].length > 0;
+  }
 
   readonly categories = CATEGORIES;
 

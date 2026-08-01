@@ -37,10 +37,13 @@
                     } @else {
                       <mat-form-field appearance="outline" class="inline-select">
                         <mat-select [value]="order.status"
+                          [disabled]="!hasValidTransitions(order.status)"
                           (selectionChange)="updateOrderStatus(order, $event.value)"
                           aria-label="Order status">
                           @for (s of orderStatuses; track s) {
-                            <mat-option [value]="s">{{ s | titlecase }}</mat-option>
+                            <mat-option [value]="s" [disabled]="!isValidTransition(order.status, s)">
+                              {{ s | titlecase }}
+                            </mat-option>
                           }
                         </mat-select>
                       </mat-form-field>

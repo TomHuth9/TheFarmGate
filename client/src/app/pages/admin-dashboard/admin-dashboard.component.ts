@@ -10,7 +10,7 @@ import { AuthService } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
 import { ProductService } from '../../services/product.service';
 import { AdminService } from '../../services/admin.service';
-import { Order } from '../../models/order.model';
+import { Order, OrderStatus, VALID_TRANSITIONS } from '../../models/order.model';
 import { Product } from '../../models/product.model';
 import { AdminUser } from '../../models/user.model';
 
@@ -38,7 +38,15 @@ export class AdminDashboardComponent implements OnInit {
   updatingOrderId = signal<string | null>(null);
   updatingUserId = signal<string | null>(null);
 
-  readonly orderStatuses: Order['status'][] = ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
+  readonly orderStatuses: OrderStatus[] = ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
+
+  isValidTransition(from: OrderStatus, to: OrderStatus): boolean {
+    return VALID_TRANSITIONS[from].includes(to);
+  }
+
+  hasValidTransitions(status: OrderStatus): boolean {
+    return VALID_TRANSITIONS[status].length > 0;
+  }
   readonly userRoles: AdminUser['role'][] = ['customer', 'farm', 'admin'];
 
   get currentUserId(): string {

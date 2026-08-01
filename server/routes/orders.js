@@ -7,6 +7,14 @@ const { handleValidationErrors } = require('../middleware/validate');
 
 const router = express.Router();
 
+const VALID_TRANSITIONS = {
+  pending:    ['confirmed', 'cancelled'],
+  confirmed:  ['dispatched', 'cancelled'],
+  dispatched: ['delivered', 'cancelled'],
+  delivered:  [],
+  cancelled:  [],
+};
+
 const orderRules = [
   body('items').isArray({ min: 1, max: 50 }).withMessage('Order must contain between 1 and 50 items'),
   body('items.*.product').isMongoId().withMessage('Each item must reference a valid product ID'),
@@ -126,6 +134,13 @@ router.patch('/:id/status', protect, farmOrAdmin, [
       const productIds = order.items.map((i) => i.product);
       const owned = await Product.findOne({ _id: { $in: productIds }, farm: req.user.id });
       if (!owned) return res.status(403).json({ message: 'Not authorised to update this order' });
+    }
+
+    const allowed = VALID_TRANSITIONS[order.status] ?? [];
+    if (!allowed.includes(req.body.status)) {
+      return res.status(422).json({
+        message: `Cannot transition order from "${order.status}" to "${req.body.status}"`,
+      });
     }
 
     order.status = req.body.status;
