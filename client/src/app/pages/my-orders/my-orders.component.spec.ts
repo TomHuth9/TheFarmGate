@@ -8,6 +8,7 @@ import { Order } from '../../models/order.model';
 import { environment } from '../../../environments/environment';
 
 const MY_ORDERS_URL = `${environment.apiUrl}/orders/my`;
+const statusUrl = (id: string) => `${environment.apiUrl}/orders/${id}/status`;
 
 const CUSTOMER = JSON.stringify({ id: 'u1', name: 'Alice', email: 'alice@example.com', role: 'customer' });
 
@@ -181,6 +182,86 @@ describe('MyOrdersComponent', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelectorAll('.item-row').length).toBe(2);
+    });
+  });
+
+  describe('cancelOrder()', () => {
+    it('shows the cancel button for a pending order when expanded', () => {
+      const { fixture, httpMock } = setup(CUSTOMER);
+      fixture.detectChanges();
+      httpMock.expectOne(MY_ORDERS_URL).flush([mockOrder({ status: 'pending' })]);
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('.order-header').click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('button[color="warn"]')).toBeTruthy();
+    });
+
+    it('does not show the cancel button for a non-pending order', () => {
+      const { fixture, httpMock } = setup(CUSTOMER);
+      fixture.detectChanges();
+      httpMock.expectOne(MY_ORDERS_URL).flush([mockOrder({ status: 'confirmed' })]);
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('.order-header').click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('button[color="warn"]')).toBeNull();
+    });
+
+    it('sends a PATCH request with status cancelled', () => {
+      const { fixture, component, httpMock } = setup(CUSTOMER);
+      fixture.detectChanges();
+      httpMock.expectOne(MY_ORDERS_URL).flush([mockOrder()]);
+      fixture.detectChanges();
+
+      spyOn(window, 'confirm').and.returnValue(true);
+      component.cancelOrder('order1');
+
+      const req = httpMock.expectOne(statusUrl('order1'));
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ status: 'cancelled' });
+      req.flush(mockOrder({ status: 'cancelled' }));
+    });
+
+    it('updates the order status in the list after a successful cancellation', () => {
+      const { fixture, component, httpMock } = setup(CUSTOMER);
+      fixture.detectChanges();
+      httpMock.expectOne(MY_ORDERS_URL).flush([mockOrder()]);
+      fixture.detectChanges();
+
+      spyOn(window, 'confirm').and.returnValue(true);
+      component.cancelOrder('order1');
+      httpMock.expectOne(statusUrl('order1')).flush(mockOrder({ status: 'cancelled' }));
+
+      expect(component.orders()[0].status).toBe('cancelled');
+    });
+
+    it('sets cancellingId while the request is in flight and clears it on completion', () => {
+      const { fixture, component, httpMock } = setup(CUSTOMER);
+      fixture.detectChanges();
+      httpMock.expectOne(MY_ORDERS_URL).flush([mockOrder()]);
+
+      spyOn(window, 'confirm').and.returnValue(true);
+      component.cancelOrder('order1');
+
+      expect(component.cancellingId()).toBe('order1');
+
+      httpMock.expectOne(statusUrl('order1')).flush(mockOrder({ status: 'cancelled' }));
+
+      expect(component.cancellingId()).toBeNull();
+    });
+
+    it('does not send a request when the confirm dialog is dismissed', () => {
+      const { fixture, component, httpMock } = setup(CUSTOMER);
+      fixture.detectChanges();
+      httpMock.expectOne(MY_ORDERS_URL).flush([mockOrder()]);
+
+      spyOn(window, 'confirm').and.returnValue(false);
+      component.cancelOrder('order1');
+
+      httpMock.expectNone(statusUrl('order1'));
     });
   });
 });

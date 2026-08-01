@@ -272,6 +272,82 @@ describe('POST /api/users/reset-password/:token', () => {
   });
 });
 
+describe('PATCH /api/users/me', () => {
+  async function registerAndGetCookies(overrides = {}) {
+    const defaults = { name: 'Alice', email: 'alice@example.com', password: 'password123' };
+    const res = await request(app).post('/api/users/register').send({ ...defaults, ...overrides });
+    return res.headers['set-cookie'];
+  }
+
+  it('allows a farm to update farmName, farmDescription, and farmLocation', async () => {
+    const cookies = await registerAndGetCookies({
+      role: 'farm',
+      farmName: 'Old Farm',
+      farmLocation: 'Devon',
+    });
+
+    const res = await request(app)
+      .patch('/api/users/me')
+      .set('Cookie', cookies)
+      .send({
+        name: 'Alice Updated',
+        farmName: 'New Farm',
+        farmDescription: 'We raise happy cows.',
+        farmLocation: 'Yorkshire, UK',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe('Alice Updated');
+    expect(res.body.farmName).toBe('New Farm');
+    expect(res.body.farmDescription).toBe('We raise happy cows.');
+    expect(res.body.farmLocation).toBe('Yorkshire, UK');
+    expect(res.body).not.toHaveProperty('password');
+  });
+
+  it('allows a customer to update their name', async () => {
+    const cookies = await registerAndGetCookies();
+
+    const res = await request(app)
+      .patch('/api/users/me')
+      .set('Cookie', cookies)
+      .send({ name: 'Alice Updated' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe('Alice Updated');
+  });
+
+  it('silently ignores farm fields for a customer', async () => {
+    const cookies = await registerAndGetCookies();
+
+    const res = await request(app)
+      .patch('/api/users/me')
+      .set('Cookie', cookies)
+      .send({ name: 'Alice', farmName: 'Hacker Farm' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.farmName).toBeFalsy();
+  });
+
+  it('returns 422 when name is set to an empty string', async () => {
+    const cookies = await registerAndGetCookies();
+
+    const res = await request(app)
+      .patch('/api/users/me')
+      .set('Cookie', cookies)
+      .send({ name: '' });
+
+    expect(res.status).toBe(422);
+  });
+
+  it('returns 401 without a token', async () => {
+    const res = await request(app)
+      .patch('/api/users/me')
+      .send({ name: 'Nobody' });
+
+    expect(res.status).toBe(401);
+  });
+});
+
 describe('GET /api/users/me', () => {
   it('returns the user profile for a valid cookie', async () => {
     const reg = await request(app).post('/api/users/register').send({

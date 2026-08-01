@@ -278,7 +278,7 @@ describe('PATCH /api/orders/:id/status', () => {
     expect(res.status).toBe(404);
   });
 
-  it('returns 403 for a customer', async () => {
+  it('returns 403 for a customer trying to confirm their own order', async () => {
     const farm = await registerFarm();
     const product = await createProduct(farm.cookies);
     const customer = await registerUser();
@@ -297,6 +297,57 @@ describe('PATCH /api/orders/:id/status', () => {
       .patch('/api/orders/64a000000000000000000001/status')
       .send({ status: 'confirmed' });
     expect(res.status).toBe(401);
+  });
+
+  describe('customer cancellation', () => {
+    it('allows a customer to cancel their own pending order', async () => {
+      const farm = await registerFarm();
+      const product = await createProduct(farm.cookies);
+      const customer = await registerUser();
+      const order = await placeOrder(customer.cookies, product._id);
+
+      const res = await request(app)
+        .patch(`/api/orders/${order._id}/status`)
+        .set('Cookie', customer.cookies)
+        .send({ status: 'cancelled' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('cancelled');
+    });
+
+    it('returns 403 when the customer tries to cancel another user\'s order', async () => {
+      const farm = await registerFarm();
+      const product = await createProduct(farm.cookies);
+      const customer1 = await registerUser({ email: 'c1@example.com' });
+      const customer2 = await registerUser({ email: 'c2@example.com' });
+      const order = await placeOrder(customer1.cookies, product._id);
+
+      const res = await request(app)
+        .patch(`/api/orders/${order._id}/status`)
+        .set('Cookie', customer2.cookies)
+        .send({ status: 'cancelled' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 422 when the customer tries to cancel a non-pending order', async () => {
+      const farm = await registerFarm();
+      const product = await createProduct(farm.cookies);
+      const customer = await registerUser();
+      const order = await placeOrder(customer.cookies, product._id);
+
+      await request(app)
+        .patch(`/api/orders/${order._id}/status`)
+        .set('Cookie', farm.cookies)
+        .send({ status: 'confirmed' });
+
+      const res = await request(app)
+        .patch(`/api/orders/${order._id}/status`)
+        .set('Cookie', customer.cookies)
+        .send({ status: 'cancelled' });
+
+      expect(res.status).toBe(422);
+    });
   });
 });
 
