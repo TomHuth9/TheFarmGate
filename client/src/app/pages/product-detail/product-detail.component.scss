@@ -75,6 +75,19 @@
     }
 
     .add-btn { width: 100%; padding: 12px 0; font-size: 1rem; }
+
+    .oos-notice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffebee;
+      color: #c62828;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-weight: 500;
+
+      mat-icon { font-size: 1.2rem; height: 1.2rem; width: 1.2rem; }
+    }
   }
 
   .spinner-wrap, .empty-state { display: flex; justify-content: center; padding: 60px 0; }

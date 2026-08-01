@@ -47,6 +47,30 @@ export class FarmDashboardComponent implements OnInit {
   togglingFeaturedId = signal<string | null>(null);
   farmFeaturedCount = computed(() => this.products().filter(p => p.farmFeatured).length);
 
+  totalRevenue = computed(() =>
+    this.orders()
+      .filter(o => o.status !== 'cancelled')
+      .reduce((sum, o) => sum + o.total, 0)
+  );
+
+  pendingCount = computed(() =>
+    this.orders().filter(o => o.status === 'pending').length
+  );
+
+  topProducts = computed(() => {
+    const qty: Record<string, { name: string; quantity: number }> = {};
+    for (const order of this.orders()) {
+      if (order.status === 'cancelled') continue;
+      for (const item of order.items) {
+        if (!qty[item.name]) qty[item.name] = { name: item.name, quantity: 0 };
+        qty[item.name].quantity += item.quantity;
+      }
+    }
+    return Object.values(qty)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 3);
+  });
+
   orders = signal<Order[]>([]);
   updatingOrderId = signal<string | null>(null);
 

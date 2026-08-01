@@ -41,17 +41,24 @@
             </button>
           </div>
 
-          <button type="button" mat-raised-button color="primary" class="add-btn" (click)="addToBasket()">
-            @if (added()) {
-              <ng-container>
-                <mat-icon>check</mat-icon> Added!
-              </ng-container>
-            } @else {
-              <ng-container>
-                <mat-icon>shopping_basket</mat-icon> Add to Basket
-              </ng-container>
-            }
-          </button>
+          @if (product()!.stock === 0) {
+            <div class="oos-notice">
+              <mat-icon>remove_shopping_cart</mat-icon>
+              This product is currently out of stock.
+            </div>
+          } @else {
+            <button type="button" mat-raised-button color="primary" class="add-btn" (click)="addToBasket()">
+              @if (added()) {
+                <ng-container>
+                  <mat-icon>check</mat-icon> Added!
+                </ng-container>
+              } @else {
+                <ng-container>
+                  <mat-icon>shopping_basket</mat-icon> Add to Basket
+                </ng-container>
+              }
+            </button>
+          }
         </div>
       </div>
     } @else {

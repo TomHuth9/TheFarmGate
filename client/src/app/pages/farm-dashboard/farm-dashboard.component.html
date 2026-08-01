@@ -7,6 +7,28 @@
       </div>
     </div>
 
+    <!-- Analytics strip -->
+    <div class="analytics-strip">
+      <div class="stat-card">
+        <span class="stat-value">{{ totalRevenue() | currency:'GBP' }}</span>
+        <span class="stat-label">Total Revenue</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ pendingCount() }}</span>
+        <span class="stat-label">Pending Orders</span>
+      </div>
+      <div class="stat-card top-products-card">
+        <span class="stat-label">Best Sellers</span>
+        @if (topProducts().length === 0) {
+          <span class="no-sales">No sales yet</span>
+        } @else {
+          @for (p of topProducts(); track p.name) {
+            <span class="top-item">{{ p.name }} <em>×{{ p.quantity }}</em></span>
+          }
+        }
+      </div>
+    </div>
+
     <mat-tab-group animationDuration="0ms" class="dashboard-tabs">
 
       <!-- PRODUCTS TAB -->
@@ -114,6 +136,11 @@
                     <span class="product-meta">{{ p.category }} · {{ p.unit }}</span>
                   </div>
                   <span class="product-price">{{ p.price | currency:'GBP' }}</span>
+                  @if (p.stock === 0) {
+                    <span class="stock-badge out-of-stock-badge">Out of stock</span>
+                  } @else if (p.stock <= 5) {
+                    <span class="stock-badge low-stock-badge">{{ p.stock }} left</span>
+                  }
                   <div class="row-actions">
                     <button type="button" mat-icon-button
                       [class.star-active]="p.farmFeatured"

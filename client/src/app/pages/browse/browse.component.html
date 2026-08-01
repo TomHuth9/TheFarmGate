@@ -34,7 +34,7 @@
     } @else {
       <div class="product-grid">
         @for (product of products(); track product._id) {
-          <mat-card class="product-card">
+          <mat-card class="product-card" [class.oos-card]="product.stock === 0">
             <a [routerLink]="['/product', product._id]">
               <img mat-card-image [src]="product.imageUrl" [alt]="product.name" [title]="product.name" class="product-img" />
             </a>
@@ -49,10 +49,14 @@
               <span class="product-price">
                 {{ product.price | currency:'GBP' }} <small>{{ product.unit }}</small>
               </span>
-              <button type="button" mat-flat-button color="primary" (click)="basket.add(product)">
-                <mat-icon>add_shopping_cart</mat-icon>
-                Add
-              </button>
+              @if (product.stock === 0) {
+                <span class="oos-label">Out of stock</span>
+              } @else {
+                <button type="button" mat-flat-button color="primary" (click)="basket.add(product)">
+                  <mat-icon>add_shopping_cart</mat-icon>
+                  Add
+                </button>
+              }
             </mat-card-actions>
           </mat-card>
         }
