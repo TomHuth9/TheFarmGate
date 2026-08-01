@@ -16,6 +16,7 @@ import { AuthService } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
 import { Product } from '../../models/product.model';
 import { Order, OrderStatus, VALID_TRANSITIONS } from '../../models/order.model';
+import { FarmProfile } from '../../models/user.model';
 
 const CATEGORIES = ['Dairy', 'Beef', 'Pork', 'Vegetables', 'Eggs', 'Poultry'] as const;
 
@@ -49,6 +50,18 @@ export class FarmDashboardComponent implements OnInit {
   orders = signal<Order[]>([]);
   updatingOrderId = signal<string | null>(null);
 
+  profileLoading = signal(true);
+  profileSaving = signal(false);
+  profileSaved = signal(false);
+  profileError = signal('');
+
+  profileForm = this.fb.group({
+    name: ['', Validators.required],
+    farmName: ['', Validators.required],
+    farmDescription: [''],
+    farmLocation: [''],
+  });
+
   readonly statuses: OrderStatus[] = ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
 
   isValidTransition(from: OrderStatus, to: OrderStatus): boolean {
@@ -80,6 +93,40 @@ export class FarmDashboardComponent implements OnInit {
     }
     this.loadProducts();
     this.loadOrders();
+    this.loadProfile();
+  }
+
+  loadProfile() {
+    this.auth.getMe().subscribe({
+      next: (profile: FarmProfile) => {
+        this.profileForm.setValue({
+          name: profile.name ?? '',
+          farmName: profile.farmName ?? '',
+          farmDescription: profile.farmDescription ?? '',
+          farmLocation: profile.farmLocation ?? '',
+        });
+        this.profileLoading.set(false);
+      },
+      error: () => this.profileLoading.set(false),
+    });
+  }
+
+  saveProfile() {
+    if (this.profileForm.invalid) return;
+    this.profileSaving.set(true);
+    this.profileSaved.set(false);
+    this.profileError.set('');
+
+    this.auth.updateProfile(this.profileForm.value as { name: string; farmName: string; farmDescription: string; farmLocation: string }).subscribe({
+      next: () => {
+        this.profileSaving.set(false);
+        this.profileSaved.set(true);
+      },
+      error: (err) => {
+        this.profileError.set(err.error?.message ?? 'Failed to save profile');
+        this.profileSaving.set(false);
+      },
+    });
   }
 
   loadOrders() {

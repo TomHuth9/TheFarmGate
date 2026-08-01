@@ -23,6 +23,7 @@ export class MyOrdersComponent implements OnInit {
   orders = signal<Order[]>([]);
   loading = signal(true);
   expandedId = signal<string | null>(null);
+  cancellingId = signal<string | null>(null);
 
   ngOnInit() {
     if (!this.auth.isLoggedIn()) {
@@ -37,5 +38,17 @@ export class MyOrdersComponent implements OnInit {
 
   toggle(id: string) {
     this.expandedId.update(current => current === id ? null : id);
+  }
+
+  cancelOrder(id: string) {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+    this.cancellingId.set(id);
+    this.orderService.updateStatus(id, 'cancelled').subscribe({
+      next: (updated) => {
+        this.orders.update(list => list.map(o => o._id === updated._id ? updated : o));
+        this.cancellingId.set(null);
+      },
+      error: () => this.cancellingId.set(null),
+    });
   }
 }

@@ -119,6 +119,33 @@ router.get('/me', protect, async (req, res) => {
   }
 });
 
+// PATCH /api/users/me — update own profile
+router.patch('/me', protect, [
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be blank').isLength({ max: 100 }),
+  body('farmName').optional().trim().isLength({ max: 100 }).withMessage('Farm name too long'),
+  body('farmDescription').optional().trim().isLength({ max: 1000 }).withMessage('Farm description too long'),
+  body('farmLocation').optional().trim().isLength({ max: 200 }).withMessage('Farm location too long'),
+  handleValidationErrors,
+], async (req, res) => {
+  try {
+    const { name, farmName, farmDescription, farmLocation } = req.body;
+    const update = {};
+    if (name !== undefined) update.name = name;
+    if (req.user.role === 'farm') {
+      if (farmName !== undefined) update.farmName = farmName;
+      if (farmDescription !== undefined) update.farmDescription = farmDescription;
+      if (farmLocation !== undefined) update.farmLocation = farmLocation;
+    }
+
+    const user = await User.findByIdAndUpdate(req.user.id, update, { new: true, runValidators: true })
+      .select('name email role farmName farmDescription farmLocation');
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'Could not update profile' });
+  }
+});
+
 // POST /api/users/forgot-password
 router.post('/forgot-password', [
   body('email').trim().isEmail().withMessage('Valid email required').normalizeEmail(),

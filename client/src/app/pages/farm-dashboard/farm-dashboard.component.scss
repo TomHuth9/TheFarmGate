@@ -58,7 +58,24 @@
       margin-top: 8px;
     }
 
-    .error-msg { color: #c62828; font-size: 0.9rem; }
+    .error-msg   { color: #c62828; font-size: 0.9rem; margin: 0; }
+    .success-msg { color: #2e7d32; font-size: 0.9rem; margin: 0; }
+  }
+
+  .profile-panel {
+    max-width: 720px;
+  }
+
+  .profile-hint {
+    color: #777;
+    font-size: 0.9rem;
+    margin: -12px 0 20px;
+  }
+
+  .spinner-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 48px 0;
   }
 
   // Product list rows

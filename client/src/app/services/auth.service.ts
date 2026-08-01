@@ -1,8 +1,9 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { User, AuthResponse } from '../models/user.model';
+import { User, AuthResponse, FarmProfile } from '../models/user.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -51,6 +52,23 @@ export class AuthService {
       complete: () => this.clearSession(),
       error: () => this.clearSession(),
     });
+  }
+
+  getMe(): Observable<FarmProfile> {
+    return this.http.get<FarmProfile>(`${this.API}/me`);
+  }
+
+  updateProfile(data: { name?: string; farmName?: string; farmDescription?: string; farmLocation?: string }) {
+    return this.http.patch<FarmProfile>(`${this.API}/me`, data).pipe(
+      tap((updated) => {
+        const current = this.currentUser();
+        if (current) {
+          const merged = { ...current, name: updated.name, farmName: updated.farmName };
+          localStorage.setItem(this.USER_KEY, JSON.stringify(merged));
+          this.currentUser.set(merged);
+        }
+      })
+    );
   }
 
   isLoggedIn(): boolean {

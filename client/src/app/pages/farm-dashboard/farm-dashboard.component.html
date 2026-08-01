@@ -183,6 +183,67 @@
         </div>
       </mat-tab>
 
+      <!-- PROFILE TAB -->
+      <mat-tab label="My Profile">
+        <div class="tab-content">
+          @if (profileLoading()) {
+            <div class="spinner-wrap">
+              <mat-spinner diameter="40"></mat-spinner>
+            </div>
+          } @else {
+            <div class="form-panel profile-panel">
+              <h2>Farm Profile</h2>
+              <p class="profile-hint">This information is shown to customers on your farm page.</p>
+
+              <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="product-form">
+
+                <div class="form-row two-col">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Your Name</mat-label>
+                    <input matInput formControlName="name" title="Your name" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Farm Name</mat-label>
+                    <input matInput formControlName="farmName" title="Farm name" placeholder="e.g. Green Acres Farm" />
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>Location</mat-label>
+                    <input matInput formControlName="farmLocation" title="Farm location" placeholder="e.g. Yorkshire, UK" />
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>About your farm</mat-label>
+                    <textarea matInput formControlName="farmDescription" rows="5" title="Farm description"
+                      placeholder="Tell customers about your farm, your values, and what makes your produce special…"></textarea>
+                  </mat-form-field>
+                </div>
+
+                @if (profileError()) {
+                  <p class="error-msg">{{ profileError() }}</p>
+                }
+                @if (profileSaved()) {
+                  <p class="success-msg">Profile saved successfully.</p>
+                }
+
+                <div class="form-actions">
+                  <button type="submit" mat-raised-button color="primary"
+                    [disabled]="profileForm.invalid || profileSaving()">
+                    {{ profileSaving() ? 'Saving…' : 'Save Profile' }}
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
     </mat-tab-group>
   </div>
 </div>

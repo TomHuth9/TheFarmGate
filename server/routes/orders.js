@@ -177,7 +177,7 @@ router.get('/farm', protect, farmOrAdmin, async (req, res) => {
 
 // ─── PATCH /api/orders/:id/status ────────────────────────────────────────────
 
-router.patch('/:id/status', protect, farmOrAdmin, [
+router.patch('/:id/status', protect, [
   param('id').isMongoId().withMessage('Invalid order ID'),
   body('status')
     .isIn(['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'])
@@ -188,11 +188,25 @@ router.patch('/:id/status', protect, farmOrAdmin, [
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
-    if (req.user.role !== 'admin') {
+    const { role, id: userId } = req.user;
+
+    if (role === 'customer') {
+      // Customers may only cancel their own pending orders
+      if (String(order.user) !== userId) {
+        return res.status(403).json({ message: 'Not authorised to update this order' });
+      }
+      if (req.body.status !== 'cancelled') {
+        return res.status(403).json({ message: 'Customers can only cancel orders' });
+      }
+      if (order.status !== 'pending') {
+        return res.status(422).json({ message: 'Only pending orders can be cancelled' });
+      }
+    } else if (role === 'farm') {
       const productIds = order.items.map((i) => i.product);
-      const owned = await Product.findOne({ _id: { $in: productIds }, farm: req.user.id });
+      const owned = await Product.findOne({ _id: { $in: productIds }, farm: userId });
       if (!owned) return res.status(403).json({ message: 'Not authorised to update this order' });
     }
+    // admin: unrestricted
 
     const allowed = VALID_TRANSITIONS[order.status] ?? [];
     if (!allowed.includes(req.body.status)) {

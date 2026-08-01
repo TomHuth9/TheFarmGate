@@ -12,6 +12,7 @@ import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
 import { MyOrdersComponent } from './pages/my-orders/my-orders.component';
+import { FarmsComponent } from './pages/farms/farms.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -27,6 +28,7 @@ export const routes: Routes = [
   { path: 'order-confirmation/:id', component: OrderConfirmationComponent },
   { path: 'farm-dashboard', component: FarmDashboardComponent },
   { path: 'admin-dashboard', component: AdminDashboardComponent },
+  { path: 'farms', component: FarmsComponent },
   { path: 'farms/:id', component: FarmProfileComponent },
   { path: 'my-orders', component: MyOrdersComponent },
   { path: '**', redirectTo: '' },

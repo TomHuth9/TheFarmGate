@@ -26,3 +26,13 @@ export interface Farm {
   farmDescription: string;
   farmLocation: string;
 }
+
+export interface FarmProfile {
+  _id: string;
+  name: string;
+  email: string;
+  role: 'farm';
+  farmName?: string;
+  farmDescription?: string;
+  farmLocation?: string;
+}

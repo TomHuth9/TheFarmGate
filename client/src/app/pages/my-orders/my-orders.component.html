@@ -54,6 +54,17 @@
                   <a mat-stroked-button [routerLink]="['/order-confirmation', order._id]">
                     <mat-icon>open_in_new</mat-icon> View Details
                   </a>
+                  @if (order.status === 'pending') {
+                    <button type="button" mat-stroked-button color="warn"
+                      [disabled]="cancellingId() === order._id"
+                      (click)="cancelOrder(order._id)">
+                      @if (cancellingId() === order._id) {
+                        <mat-spinner diameter="18"></mat-spinner>
+                      } @else {
+                        <mat-icon>cancel</mat-icon> Cancel Order
+                      }
+                    </button>
+                  }
                 </div>
               </div>
             }
