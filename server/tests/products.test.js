@@ -77,6 +77,59 @@ describe('GET /api/products', () => {
     expect(res.body).toHaveLength(1);
     expect(res.body[0].name).toBe('Milk');
   });
+
+  describe('?q search', () => {
+    let cookies;
+
+    beforeEach(async () => {
+      ({ cookies } = await registerFarm());
+      await request(app).post('/api/products').set('Cookie', cookies)
+        .send({ name: 'Organic Whole Milk', description: 'Rich creamy milk from grass-fed cows', price: 1.5, category: 'Dairy', unit: 'per litre' });
+      await request(app).post('/api/products').set('Cookie', cookies)
+        .send({ name: 'Free Range Eggs', description: 'Laid by happy hens', price: 3, category: 'Eggs', unit: 'per dozen' });
+      await request(app).post('/api/products').set('Cookie', cookies)
+        .send({ name: 'Ribeye Steak', description: 'Premium grass-fed beef', price: 18, category: 'Beef', unit: 'per 300g' });
+    });
+
+    it('matches products by name (case-insensitive)', async () => {
+      const res = await request(app).get('/api/products?q=eggs');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].name).toBe('Free Range Eggs');
+    });
+
+    it('matches products by description keyword', async () => {
+      const res = await request(app).get('/api/products?q=grass-fed');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(2);
+    });
+
+    it('returns all matching products for a partial name', async () => {
+      const res = await request(app).get('/api/products?q=mil');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].name).toBe('Organic Whole Milk');
+    });
+
+    it('returns an empty array when nothing matches', async () => {
+      const res = await request(app).get('/api/products?q=unicorn');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(0);
+    });
+
+    it('can combine ?q with ?category', async () => {
+      const res = await request(app).get('/api/products?q=grass-fed&category=Dairy');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].name).toBe('Organic Whole Milk');
+    });
+
+    it('returns 422 when ?q exceeds 100 characters', async () => {
+      const long = 'a'.repeat(101);
+      const res = await request(app).get(`/api/products?q=${long}`);
+      expect(res.status).toBe(422);
+    });
+  });
 });
 
 describe('GET /api/products/:id', () => {

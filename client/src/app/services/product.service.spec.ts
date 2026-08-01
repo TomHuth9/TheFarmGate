@@ -67,6 +67,29 @@ describe('ProductService', () => {
       expect(req.request.params.get('farm')).toBe('farm123');
       req.flush([]);
     });
+
+    it('appends a search query param', () => {
+      service.getAll(undefined, undefined, 'eggs').subscribe();
+      const req = httpMock.expectOne(`${BASE}?q=eggs`);
+      expect(req.request.params.get('q')).toBe('eggs');
+      req.flush([]);
+    });
+
+    it('omits the q param when search is undefined', () => {
+      service.getAll('Dairy').subscribe();
+      const req = httpMock.expectOne(`${BASE}?category=Dairy`);
+      expect(req.request.params.get('q')).toBeNull();
+      req.flush([]);
+    });
+
+    it('can combine category, farm, and search together', () => {
+      service.getAll('Dairy', 'farm1', 'milk').subscribe();
+      const req = httpMock.expectOne((r) => r.url === BASE);
+      expect(req.request.params.get('category')).toBe('Dairy');
+      expect(req.request.params.get('farm')).toBe('farm1');
+      expect(req.request.params.get('q')).toBe('milk');
+      req.flush([]);
+    });
   });
 
   describe('getFeatured()', () => {
