@@ -2,8 +2,10 @@ const express = require('express');
 const { body, param, query } = require('express-validator');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const { protect, adminOnly, farmOrAdmin } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
+const { sendOrderConfirmation, sendOrderReceived, sendStatusUpdate } = require('../utils/email');
 
 const router = express.Router();
 
@@ -27,7 +29,57 @@ const orderRules = [
   body('centre').optional({ checkFalsy: true }).isMongoId().withMessage('Invalid centre ID'),
 ];
 
-// POST /api/orders
+// ─── Email helpers (fire-and-forget — never block a response) ─────────────────
+
+async function notifyOrderPlaced(userId, productIds, verifiedItems, order) {
+  try {
+    const [customer, farmProductDocs] = await Promise.all([
+      User.findById(userId).select('name email'),
+      Product.find({ _id: { $in: productIds } })
+        .select('_id farm')
+        .populate('farm', 'name email farmName'),
+    ]);
+
+    if (customer) {
+      sendOrderConfirmation(customer, order)
+        .catch(err => console.error('[Email] Confirmation failed:', err));
+    }
+
+    // Group items by farm and notify each farm separately
+    const farmItemsMap = new Map(); // farmId -> { farmUser, items }
+    for (const fp of farmProductDocs) {
+      if (!fp.farm) continue;
+      const farmId = String(fp.farm._id);
+      if (!farmItemsMap.has(farmId)) {
+        farmItemsMap.set(farmId, { farmUser: fp.farm, items: [] });
+      }
+      const item = verifiedItems.find(i => String(i.product) === String(fp._id));
+      if (item) farmItemsMap.get(farmId).items.push(item);
+    }
+
+    for (const { farmUser, items } of farmItemsMap.values()) {
+      sendOrderReceived(farmUser, items, order)
+        .catch(err => console.error('[Email] Farm notification failed:', err));
+    }
+  } catch (err) {
+    console.error('[Email] notifyOrderPlaced failed:', err);
+  }
+}
+
+async function notifyStatusUpdate(order) {
+  try {
+    const customer = await User.findById(order.user).select('name email');
+    if (customer) {
+      sendStatusUpdate(customer, order)
+        .catch(err => console.error('[Email] Status update failed:', err));
+    }
+  } catch (err) {
+    console.error('[Email] notifyStatusUpdate failed:', err);
+  }
+}
+
+// ─── POST /api/orders ─────────────────────────────────────────────────────────
+
 router.post('/', protect, orderRules, handleValidationErrors, async (req, res) => {
   try {
     const { items, deliveryAddress, notes, centre } = req.body;
@@ -57,7 +109,7 @@ router.post('/', protect, orderRules, handleValidationErrors, async (req, res) =
     const verifiedItems = items.map((item) => ({
       product: item.product,
       name: priceMap[item.product].name,
-      price: priceMap[item.product].price, // server-authoritative price
+      price: priceMap[item.product].price,
       quantity: item.quantity,
     }));
 
@@ -83,12 +135,16 @@ router.post('/', protect, orderRules, handleValidationErrors, async (req, res) =
     );
 
     res.status(201).json(order);
+
+    // Email notifications — fire-and-forget after response is sent
+    notifyOrderPlaced(req.user.id, productIds, verifiedItems, order);
   } catch (err) {
     res.status(400).json({ message: 'Could not place order' });
   }
 });
 
-// GET /api/orders/my
+// ─── GET /api/orders/my ───────────────────────────────────────────────────────
+
 router.get('/my', protect, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user.id })
@@ -101,7 +157,8 @@ router.get('/my', protect, async (req, res) => {
   }
 });
 
-// GET /api/orders/farm — returns orders containing products owned by this farm user
+// ─── GET /api/orders/farm ─────────────────────────────────────────────────────
+
 router.get('/farm', protect, farmOrAdmin, async (req, res) => {
   try {
     const farmProducts = await Product.find({ farm: req.user.id }).select('_id');
@@ -118,7 +175,8 @@ router.get('/farm', protect, farmOrAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/orders/:id/status — update order status (farm must own at least one item)
+// ─── PATCH /api/orders/:id/status ────────────────────────────────────────────
+
 router.patch('/:id/status', protect, farmOrAdmin, [
   param('id').isMongoId().withMessage('Invalid order ID'),
   body('status')
@@ -146,12 +204,16 @@ router.patch('/:id/status', protect, farmOrAdmin, [
     order.status = req.body.status;
     await order.save();
     res.json(order);
+
+    // Email notification — fire-and-forget after response is sent
+    notifyStatusUpdate(order);
   } catch (err) {
     res.status(500).json({ message: 'Could not update order status' });
   }
 });
 
-// GET /api/orders/:id
+// ─── GET /api/orders/:id ──────────────────────────────────────────────────────
+
 router.get('/:id', protect, [
   param('id').isMongoId().withMessage('Invalid order ID'),
   handleValidationErrors,
@@ -173,7 +235,8 @@ router.get('/:id', protect, [
   }
 });
 
-// GET /api/orders — admin only
+// ─── GET /api/orders (admin) ──────────────────────────────────────────────────
+
 router.get('/', protect, adminOnly, [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
