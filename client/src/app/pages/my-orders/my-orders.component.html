@@ -1,0 +1,65 @@
+<div class="orders-page section-pad">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">My Orders</h1>
+      <p class="subtitle">Track the status of your orders</p>
+    </div>
+
+    @if (loading()) {
+      <div class="spinner-wrap">
+        <mat-spinner diameter="48"></mat-spinner>
+      </div>
+    } @else if (orders().length === 0) {
+      <div class="empty-state">
+        <mat-icon>receipt_long</mat-icon>
+        <p>You haven't placed any orders yet.</p>
+        <a mat-raised-button color="primary" routerLink="/browse">Start Shopping</a>
+      </div>
+    } @else {
+      <div class="order-list">
+        @for (order of orders(); track order._id) {
+          <div class="order-card" [class.expanded]="expandedId() === order._id">
+
+            <div class="order-header" (click)="toggle(order._id)" (keydown.enter)="toggle(order._id)"
+              role="button" tabindex="0" [attr.aria-expanded]="expandedId() === order._id">
+              <div class="order-id">
+                <mat-icon class="receipt-icon">receipt</mat-icon>
+                <span class="id-text">{{ order._id | slice:0:8 }}…</span>
+              </div>
+              <span class="order-date">{{ order.createdAt | date:'d MMM yyyy' }}</span>
+              <span class="status-chip status-{{ order.status }}">{{ order.status | titlecase }}</span>
+              <span class="order-total">{{ order.total | currency:'GBP' }}</span>
+              <mat-icon class="chevron">
+                {{ expandedId() === order._id ? 'expand_less' : 'expand_more' }}
+              </mat-icon>
+            </div>
+
+            @if (expandedId() === order._id) {
+              <div class="order-body">
+                <div class="items-list">
+                  @for (item of order.items; track item.product) {
+                    <div class="item-row">
+                      <span class="item-name">{{ item.name }} × {{ item.quantity }}</span>
+                      <span class="item-price">{{ (item.price * item.quantity) | currency:'GBP' }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="order-footer">
+                  <span class="total-label">Total</span>
+                  <span class="total-value">{{ order.total | currency:'GBP' }}</span>
+                </div>
+
+                <div class="card-actions">
+                  <a mat-stroked-button [routerLink]="['/order-confirmation', order._id]">
+                    <mat-icon>open_in_new</mat-icon> View Details
+                  </a>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

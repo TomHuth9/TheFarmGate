@@ -11,6 +11,7 @@ import { FarmProfileComponent } from './pages/farm-profile/farm-profile.componen
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
+import { MyOrdersComponent } from './pages/my-orders/my-orders.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -27,5 +28,6 @@ export const routes: Routes = [
   { path: 'farm-dashboard', component: FarmDashboardComponent },
   { path: 'admin-dashboard', component: AdminDashboardComponent },
   { path: 'farms/:id', component: FarmProfileComponent },
+  { path: 'my-orders', component: MyOrdersComponent },
   { path: '**', redirectTo: '' },
 ];

@@ -50,6 +50,10 @@
           <span>Admin Dashboard</span>
         </button>
       }
+      <button type="button" mat-menu-item routerLink="/my-orders">
+        <mat-icon>receipt_long</mat-icon>
+        <span>My Orders</span>
+      </button>
       <button type="button" mat-menu-item (click)="auth.logout()">
         <mat-icon>logout</mat-icon>
         <span>Sign out</span>
