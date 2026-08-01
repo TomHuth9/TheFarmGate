@@ -130,6 +130,62 @@
     }
   }
 
+  .image-upload-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 4px 0 8px;
+  }
+
+  .image-preview {
+    position: relative;
+    flex-shrink: 0;
+
+    img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #e0d5c4;
+      display: block;
+    }
+
+    .remove-image-btn {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #fff;
+      border: 1px solid #e0d5c4;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+
+      mat-icon { font-size: 16px; height: 16px; width: 16px; }
+    }
+  }
+
+  .upload-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    padding-top: 4px;
+  }
+
+  .uploading-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #888;
+    font-size: 0.9rem;
+  }
+
+  .upload-error {
+    color: #c62828;
+    font-size: 0.85rem;
+  }
+
   .profile-panel {
     max-width: 720px;
   }

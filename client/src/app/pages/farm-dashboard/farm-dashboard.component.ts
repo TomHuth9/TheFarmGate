@@ -14,6 +14,7 @@ import { CurrencyPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { ProductService } from '../../services/product.service';
 import { AuthService } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
+import { CloudinaryService } from '../../services/cloudinary.service';
 import { Product } from '../../models/product.model';
 import { Order, OrderStatus, VALID_TRANSITIONS } from '../../models/order.model';
 import { FarmProfile } from '../../models/user.model';
@@ -35,6 +36,7 @@ export class FarmDashboardComponent implements OnInit {
   private productService = inject(ProductService);
   private orderService = inject(OrderService);
   private auth = inject(AuthService);
+  private cloudinary = inject(CloudinaryService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
 
@@ -73,6 +75,9 @@ export class FarmDashboardComponent implements OnInit {
 
   orders = signal<Order[]>([]);
   updatingOrderId = signal<string | null>(null);
+
+  imageUploading = signal(false);
+  imageUploadError = signal('');
 
   profileLoading = signal(true);
   profileSaving = signal(false);
@@ -172,6 +177,23 @@ export class FarmDashboardComponent implements OnInit {
     const user = this.auth.currentUser();
     if (!user) return;
     this.productService.getAll(undefined, user.id).subscribe((p) => this.products.set(p));
+  }
+
+  onImageFile(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.imageUploading.set(true);
+    this.imageUploadError.set('');
+    this.cloudinary.upload(file).subscribe({
+      next: (url) => {
+        this.form.patchValue({ imageUrl: url });
+        this.imageUploading.set(false);
+      },
+      error: () => {
+        this.imageUploadError.set('Upload failed — please try again.');
+        this.imageUploading.set(false);
+      },
+    });
   }
 
   openAdd() {

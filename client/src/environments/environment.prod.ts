@@ -3,4 +3,6 @@ export const environment = {
   // Set this to your deployed API origin, e.g. 'https://api.thefarmgate.co.uk/api'
   // Using '/api' assumes the Angular app and API are served from the same origin.
   apiUrl: '/api',
+  cloudinaryCloudName: 'your-cloud-name',
+  cloudinaryUploadPreset: 'your-upload-preset',
 };

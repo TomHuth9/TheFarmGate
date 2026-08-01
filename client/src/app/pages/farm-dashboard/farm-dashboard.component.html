@@ -93,12 +93,35 @@
                   </mat-form-field>
                 </div>
 
-                <div class="form-row">
-                  <mat-form-field appearance="outline" class="full">
-                    <mat-label>Image URL (optional)</mat-label>
-                    <input matInput formControlName="imageUrl" title="Image URL"
-                      placeholder="https://images.unsplash.com/…" />
-                  </mat-form-field>
+                <div class="form-row image-upload-row">
+                  @if (form.value.imageUrl) {
+                    <div class="image-preview">
+                      <img [src]="form.value.imageUrl" alt="Product image preview" title="Product image preview" />
+                      <button type="button" mat-icon-button class="remove-image-btn"
+                        aria-label="Remove image"
+                        (click)="form.patchValue({ imageUrl: '' }); imageUploadError.set('')">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  }
+                  <div class="upload-controls">
+                    @if (imageUploading()) {
+                      <span class="uploading-label">
+                        <mat-spinner diameter="18"></mat-spinner>
+                        Uploading…
+                      </span>
+                    } @else {
+                      <button type="button" mat-stroked-button (click)="imageInput.click()">
+                        <mat-icon>upload</mat-icon>
+                        {{ form.value.imageUrl ? 'Replace image' : 'Upload image' }}
+                      </button>
+                      <input #imageInput type="file" accept="image/*" hidden
+                        (change)="onImageFile($event)" />
+                    }
+                    @if (imageUploadError()) {
+                      <span class="upload-error">{{ imageUploadError() }}</span>
+                    }
+                  </div>
                 </div>
 
                 @if (error()) {
