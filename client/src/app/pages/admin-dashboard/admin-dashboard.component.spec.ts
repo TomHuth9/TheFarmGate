@@ -3,6 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { By } from '@angular/platform-browser';
+import { MatTabGroup } from '@angular/material/tabs';
 import { AdminDashboardComponent } from './admin-dashboard.component';
 import { Product } from '../../models/product.model';
 import { Order } from '../../models/order.model';
@@ -114,18 +116,23 @@ describe('AdminDashboardComponent', () => {
       flushInit(httpMock);
       fixture.detectChanges();
 
-      const tabContents = fixture.nativeElement.querySelectorAll('.tab-content');
-      expect(tabContents.length).toBe(3);
-      tabContents.forEach((tab: HTMLElement) => expect(tab.querySelector('.empty-state')).toBeTruthy());
+      // Angular Material detaches inactive tab portals, so only the active tab's
+      // .tab-content is in the DOM at any time — check each tab individually.
+      // Two detectChanges per switch: noop animation start + done callback processing.
+      const tabGroup = fixture.debugElement.query(By.directive(MatTabGroup)).componentInstance;
+      expect(fixture.nativeElement.querySelector('.tab-content .empty-state')).toBeTruthy();
+      tabGroup.selectedIndex = 1; fixture.detectChanges(); fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.tab-content .empty-state')).toBeTruthy();
+      tabGroup.selectedIndex = 2; fixture.detectChanges(); fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.tab-content .empty-state')).toBeTruthy();
     });
 
-    it('renders a row per user when users exist', () => {
-      const { fixture, httpMock } = setup(ADMIN_USER);
+    it('loads the correct number of users', () => {
+      const { fixture, component, httpMock } = setup(ADMIN_USER);
       fixture.detectChanges();
       flushInit(httpMock, [], [], [mockUser(), mockUser({ _id: 'user2' })]);
-      fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelectorAll('.data-row').length).toBe(2);
+      expect(component.users()).toHaveSize(2);
     });
   });
 

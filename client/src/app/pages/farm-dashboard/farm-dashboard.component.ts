@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { ProductService } from '../../services/product.service';
 import { AuthService } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
@@ -23,7 +23,7 @@ const CATEGORIES = ['Dairy', 'Beef', 'Pork', 'Vegetables', 'Eggs', 'Poultry'] as
   selector: 'app-farm-dashboard',
   standalone: true,
   imports: [
-    RouterLink, ReactiveFormsModule, CurrencyPipe, DatePipe,
+    RouterLink, ReactiveFormsModule, CurrencyPipe, DatePipe, TitleCasePipe,
     MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatIconModule, MatDialogModule, MatTabsModule, MatProgressSpinnerModule,
   ],

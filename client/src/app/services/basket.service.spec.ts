@@ -15,13 +15,18 @@ const mockProduct = (overrides: Partial<Product> = {}): Product => ({
   ...overrides,
 });
 
+const STORAGE_KEY = 'tfg_basket';
+
 describe('BasketService', () => {
   let service: BasketService;
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({});
     service = TestBed.inject(BasketService);
   });
+
+  afterEach(() => localStorage.clear());
 
   it('should be created', () => {
     expect(service).toBeTruthy();
@@ -101,6 +106,59 @@ describe('BasketService', () => {
       service.add(mockProduct({ _id: '2', name: 'Eggs' }));
       service.clear();
       expect(service.items()).toHaveSize(0);
+    });
+  });
+
+  describe('persistence', () => {
+    it('restores items from localStorage on creation', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([{ product: mockProduct(), quantity: 3 }]));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(BasketService);
+      expect(fresh.items()).toHaveSize(1);
+      expect(fresh.items()[0].quantity).toBe(3);
+      expect(fresh.itemCount()).toBe(3);
+    });
+
+    it('starts empty when localStorage has no basket entry', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(BasketService);
+      expect(fresh.items()).toEqual([]);
+    });
+
+    it('starts empty when localStorage contains corrupt JSON', () => {
+      localStorage.setItem(STORAGE_KEY, '{not:valid:::json');
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(BasketService);
+      expect(fresh.items()).toEqual([]);
+    });
+
+    it('writes to localStorage when a product is added', () => {
+      service.add(mockProduct(), 2);
+      TestBed.flushEffects();
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+      expect(stored).toHaveSize(1);
+      expect(stored[0].quantity).toBe(2);
+    });
+
+    it('updates localStorage when a product is removed', () => {
+      service.add(mockProduct({ _id: '1' }));
+      service.add(mockProduct({ _id: '2', name: 'Eggs' }));
+      service.remove('1');
+      TestBed.flushEffects();
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+      expect(stored).toHaveSize(1);
+      expect(stored[0].product._id).toBe('2');
+    });
+
+    it('clears localStorage when clear() is called', () => {
+      service.add(mockProduct());
+      service.clear();
+      TestBed.flushEffects();
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+      expect(stored).toHaveSize(0);
     });
   });
 

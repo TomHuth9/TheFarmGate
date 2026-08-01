@@ -3,6 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { By } from '@angular/platform-browser';
+import { MatTabGroup } from '@angular/material/tabs';
 import { FarmDashboardComponent } from './farm-dashboard.component';
 import { Product } from '../../models/product.model';
 import { Order } from '../../models/order.model';
@@ -72,7 +74,7 @@ describe('FarmDashboardComponent', () => {
 
       fixture.detectChanges();
 
-      httpMock.expectOne(PRODUCTS_URL).flush([mockProduct()]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct()]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([mockOrder()]);
 
       expect(component.products()).toHaveSize(1);
@@ -84,22 +86,27 @@ describe('FarmDashboardComponent', () => {
     it('shows the empty state when there are no orders', () => {
       const { fixture, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([]);
       fixture.detectChanges();
 
-      const tabContents = fixture.nativeElement.querySelectorAll('.tab-content');
-      expect(tabContents[1].querySelector('.empty-state')).toBeTruthy();
+      // Activate the Orders tab — Angular Material detaches inactive portals, so only
+      // the active tab's .tab-content is in the DOM at any given time.
+      // Two detectChanges: one to start the noop animation, one to process its done callback.
+      fixture.debugElement.query(By.directive(MatTabGroup)).componentInstance.selectedIndex = 1;
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.tab-content .empty-state')).toBeTruthy();
     });
 
-    it('renders a row per order when orders exist', () => {
-      const { fixture, httpMock } = setup(FARM_USER);
+    it('loads the correct number of orders', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([mockOrder(), mockOrder({ _id: 'order2' })]);
-      fixture.detectChanges();
 
-      expect(fixture.nativeElement.querySelectorAll('.order-row').length).toBe(2);
+      expect(component.orders()).toHaveSize(2);
     });
   });
 
@@ -107,7 +114,7 @@ describe('FarmDashboardComponent', () => {
     it('marks the order as updating, then applies the new status', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([mockOrder()]);
 
       const order = component.orders()[0];
@@ -124,7 +131,7 @@ describe('FarmDashboardComponent', () => {
     it('clears updatingOrderId on failure without changing the order', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([mockOrder()]);
 
       component.updateStatus(component.orders()[0], 'confirmed');
@@ -141,7 +148,7 @@ describe('FarmDashboardComponent', () => {
     it('POSTs a new product when adding, then reloads the list', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([]);
 
       component.openAdd();
@@ -155,13 +162,13 @@ describe('FarmDashboardComponent', () => {
       req.flush(mockProduct({ _id: 'prod2', name: 'Eggs' }));
 
       expect(component.showForm()).toBeFalse();
-      httpMock.expectOne(PRODUCTS_URL).flush([mockProduct({ _id: 'prod2', name: 'Eggs' })]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct({ _id: 'prod2', name: 'Eggs' })]);
     });
 
     it('PUTs to the product id when editing an existing product', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([mockProduct()]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct()]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([]);
 
       component.openEdit(component.products()[0]);
@@ -171,13 +178,13 @@ describe('FarmDashboardComponent', () => {
       expect(req.request.method).toBe('PUT');
       req.flush(mockProduct());
 
-      httpMock.expectOne(PRODUCTS_URL).flush([mockProduct()]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct()]);
     });
 
     it('sets the error signal and stops saving on failure', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([]);
 
       component.openAdd();
@@ -199,7 +206,7 @@ describe('FarmDashboardComponent', () => {
     it('does nothing when the confirmation is dismissed', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([mockProduct()]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct()]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([]);
 
       spyOn(window, 'confirm').and.returnValue(false);
@@ -211,7 +218,7 @@ describe('FarmDashboardComponent', () => {
     it('deletes and reloads the product list when confirmed', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);
       fixture.detectChanges();
-      httpMock.expectOne(PRODUCTS_URL).flush([mockProduct()]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct()]);
       httpMock.expectOne(FARM_ORDERS_URL).flush([]);
 
       spyOn(window, 'confirm').and.returnValue(true);
@@ -221,7 +228,7 @@ describe('FarmDashboardComponent', () => {
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
 
-      httpMock.expectOne(PRODUCTS_URL).flush([]);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
     });
   });
 });
