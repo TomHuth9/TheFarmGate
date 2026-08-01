@@ -1,10 +1,12 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { effect, Injectable, signal, computed } from '@angular/core';
 import { Product } from '../models/product.model';
 import { BasketItem } from '../models/basket.model';
 
+const STORAGE_KEY = 'tfg_basket';
+
 @Injectable({ providedIn: 'root' })
 export class BasketService {
-  items = signal<BasketItem[]>([]);
+  items = signal<BasketItem[]>(this.load());
 
   // Total item count for the basket icon badge
   itemCount = computed(() => this.items().reduce((sum, i) => sum + i.quantity, 0));
@@ -13,6 +15,19 @@ export class BasketService {
   total = computed(() =>
     this.items().reduce((sum, i) => sum + i.product.price * i.quantity, 0)
   );
+
+  constructor() {
+    effect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items())));
+  }
+
+  private load(): BasketItem[] {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? (JSON.parse(stored) as BasketItem[]) : [];
+    } catch {
+      return [];
+    }
+  }
 
   add(product: Product, quantity = 1) {
     this.items.update((current) => {
