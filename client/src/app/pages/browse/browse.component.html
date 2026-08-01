@@ -2,16 +2,29 @@
   <div class="container">
     <h1 class="page-title">{{ activeCategory() || 'All Products' }}</h1>
 
-    <!-- Category filter toggles -->
-    <div class="filter-bar">
-      @for (cat of categories; track cat) {
-        <button
-          type="button"
-          mat-stroked-button
-          [class.active]="(cat === 'All' && !activeCategory()) || cat === activeCategory()"
-          (click)="selectCategory(cat)"
-        >{{ cat }}</button>
-      }
+    <!-- Search & category bar -->
+    <div class="controls-row">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search products</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput [formControl]="searchControl" placeholder="e.g. free-range eggs" />
+        @if (searchControl.value) {
+          <button type="button" matSuffix mat-icon-button aria-label="Clear" (click)="searchControl.setValue('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+
+      <div class="filter-bar">
+        @for (cat of categories; track cat) {
+          <button
+            type="button"
+            mat-stroked-button
+            [class.active]="(cat === 'All' && !activeCategory()) || cat === activeCategory()"
+            (click)="selectCategory(cat)"
+          >{{ cat }}</button>
+        }
+      </div>
     </div>
 
     @if (loading()) {
@@ -46,7 +59,13 @@
       </div>
 
       @if (products().length === 0) {
-        <p class="empty-state">No products found in this category.</p>
+        <p class="empty-state">
+          @if (searchControl.value) {
+            No products match "{{ searchControl.value }}".
+          } @else {
+            No products found in this category.
+          }
+        </p>
       }
     }
   </div>

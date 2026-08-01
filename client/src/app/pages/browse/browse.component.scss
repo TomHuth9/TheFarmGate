@@ -8,11 +8,22 @@
     margin-bottom: 24px;
   }
 
+  .controls-row {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .search-field {
+    width: 100%;
+    max-width: 480px;
+  }
+
   .filter-bar {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 32px;
 
     button {
       border-radius: 20px !important;

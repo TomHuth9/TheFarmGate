@@ -25,11 +25,25 @@
         @if (farm()!.farmDescription) {
           <p class="farm-description">{{ farm()!.farmDescription }}</p>
         }
+
+        <!-- Farm-scoped search -->
+        @if (products().length > 0) {
+          <mat-form-field appearance="outline" class="farm-search">
+            <mat-label>Search {{ farm()!.farmName }}'s products</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput [formControl]="searchControl" placeholder="e.g. eggs, milk..." />
+            @if (searchControl.value) {
+              <button type="button" matSuffix mat-icon-button aria-label="Clear" (click)="searchControl.setValue('')">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+        }
       </div>
     </section>
 
     <!-- Farm highlights (farm-curated featured products) -->
-    @if (featuredProducts().length > 0) {
+    @if (featuredProducts().length > 0 && !searchControl.value) {
       <section class="featured-strip section-pad">
         <div class="container">
           <h2 class="section-title">
@@ -64,16 +78,24 @@
       </section>
     }
 
-    <!-- All products -->
+    <!-- All / filtered products -->
     <section class="section-pad">
       <div class="container">
-        <h2 class="section-title">All products from {{ farm()!.farmName }}</h2>
+        <h2 class="section-title">
+          @if (searchControl.value) {
+            Results for "{{ searchControl.value }}"
+          } @else {
+            All products from {{ farm()!.farmName }}
+          }
+        </h2>
 
         @if (products().length === 0) {
           <p class="empty-state">This farm hasn't listed any products yet.</p>
+        } @else if (filteredProducts().length === 0) {
+          <p class="empty-state">No products match "{{ searchControl.value }}".</p>
         } @else {
           <div class="product-grid">
-            @for (product of products(); track product._id) {
+            @for (product of filteredProducts(); track product._id) {
               <mat-card class="product-card">
                 <a [routerLink]="['/product', product._id]">
                   <img mat-card-image [src]="product.imageUrl" [alt]="product.name" [title]="product.name" class="product-img" />

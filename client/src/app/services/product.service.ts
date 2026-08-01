@@ -10,10 +10,11 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(category?: string, farmId?: string): Observable<Product[]> {
+  getAll(category?: string, farmId?: string, search?: string): Observable<Product[]> {
     let params = new HttpParams();
     if (category) params = params.set('category', category);
     if (farmId) params = params.set('farm', farmId);
+    if (search) params = params.set('q', search);
     return this.http.get<Product[]>(this.API, { params });
   }
 

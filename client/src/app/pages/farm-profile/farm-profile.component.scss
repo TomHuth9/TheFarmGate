@@ -60,7 +60,25 @@
       max-width: 680px;
       line-height: 1.7;
       opacity: 0.9;
-      margin: 0;
+      margin: 0 0 24px;
+    }
+
+    .farm-search {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 8px;
+
+      // Invert the field colours so it reads well on the dark hero background
+      --mdc-outlined-text-field-label-text-color: rgba(255,255,255,0.7);
+      --mdc-outlined-text-field-input-text-color: #fff;
+      --mdc-outlined-text-field-outline-color: rgba(255,255,255,0.4);
+      --mdc-outlined-text-field-hover-outline-color: rgba(255,255,255,0.8);
+      --mdc-outlined-text-field-focus-outline-color: #fff;
+      --mdc-outlined-text-field-caret-color: #fff;
+
+      mat-icon { color: rgba(255,255,255,0.7); }
+      button mat-icon { color: rgba(255,255,255,0.7); }
+      input::placeholder { color: rgba(255,255,255,0.45); }
     }
   }
 

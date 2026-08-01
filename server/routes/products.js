@@ -27,6 +27,7 @@ const mongoIdParam = [
 router.get('/', [
   query('category').optional().isIn(CATEGORIES).withMessage('Invalid category'),
   query('farm').optional().isMongoId().withMessage('Invalid farm ID'),
+  query('q').optional().trim().isLength({ max: 100 }).withMessage('Search query must be 100 characters or fewer'),
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   handleValidationErrors,
@@ -36,6 +37,13 @@ router.get('/', [
     if (req.query.category) filter.category = req.query.category;
     if (req.query.featured === 'true') filter.featured = true;
     if (req.query.farm) filter.farm = req.query.farm;
+    if (req.query.q) {
+      const escaped = req.query.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.$or = [
+        { name: { $regex: escaped, $options: 'i' } },
+        { description: { $regex: escaped, $options: 'i' } },
+      ];
+    }
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
