@@ -291,6 +291,143 @@ describe('FarmDashboardComponent', () => {
     });
   });
 
+  describe('analytics computed signals', () => {
+    it('totalRevenue() returns 0 when there are no orders', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+
+      expect(component.totalRevenue()).toBe(0);
+    });
+
+    it('totalRevenue() sums totals from non-cancelled orders only', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ total: 10, status: 'confirmed' }),
+          mockOrder({ _id: 'order2', total: 5, status: 'cancelled' }),
+          mockOrder({ _id: 'order3', total: 7, status: 'delivered' }),
+        ],
+      });
+
+      expect(component.totalRevenue()).toBeCloseTo(17);
+    });
+
+    it('pendingCount() counts only pending orders', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ status: 'pending' }),
+          mockOrder({ _id: 'order2', status: 'pending' }),
+          mockOrder({ _id: 'order3', status: 'confirmed' }),
+        ],
+      });
+
+      expect(component.pendingCount()).toBe(2);
+    });
+
+    it('topProducts() returns an empty array when no orders exist', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+
+      expect(component.topProducts()).toHaveSize(0);
+    });
+
+    it('topProducts() aggregates quantities across orders and sorts descending', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({
+            items: [
+              { product: 'p1', name: 'Milk', price: 1.5, quantity: 5 },
+              { product: 'p2', name: 'Eggs', price: 2, quantity: 3 },
+            ],
+            total: 13.5,
+            status: 'confirmed',
+          }),
+          mockOrder({
+            _id: 'order2',
+            items: [{ product: 'p1', name: 'Milk', price: 1.5, quantity: 4 }],
+            total: 6,
+            status: 'delivered',
+          }),
+        ],
+      });
+
+      const top = component.topProducts();
+      expect(top[0]).toEqual({ name: 'Milk', quantity: 9 });
+      expect(top[1]).toEqual({ name: 'Eggs', quantity: 3 });
+    });
+
+    it('topProducts() excludes items from cancelled orders', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [mockOrder({ status: 'cancelled' })],
+      });
+
+      expect(component.topProducts()).toHaveSize(0);
+    });
+
+    it('topProducts() returns at most 3 items even when more products have been sold', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({
+            items: [
+              { product: 'p1', name: 'Milk', price: 1, quantity: 10 },
+              { product: 'p2', name: 'Eggs', price: 1, quantity: 8 },
+              { product: 'p3', name: 'Butter', price: 1, quantity: 6 },
+              { product: 'p4', name: 'Cheese', price: 1, quantity: 4 },
+            ],
+            total: 28,
+            status: 'confirmed',
+          }),
+        ],
+      });
+
+      expect(component.topProducts()).toHaveSize(3);
+    });
+  });
+
+  describe('low stock indicators', () => {
+    it('shows a low-stock badge for a product with 5 or fewer units remaining', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 3 })] });
+      fixture.detectChanges();
+
+      const badge = fixture.nativeElement.querySelector('.low-stock-badge');
+      expect(badge).toBeTruthy();
+      expect(badge.textContent).toContain('3');
+    });
+
+    it('shows an out-of-stock badge and no low-stock badge when stock is 0', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 0 })] });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.out-of-stock-badge')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.low-stock-badge')).toBeNull();
+    });
+
+    it('shows no stock badge for a product with more than 5 units', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 10 })] });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.low-stock-badge')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.out-of-stock-badge')).toBeNull();
+    });
+  });
+
   describe('delete()', () => {
     it('does nothing when the confirmation is dismissed', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);

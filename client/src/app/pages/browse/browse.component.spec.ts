@@ -159,6 +159,46 @@ describe('BrowseComponent', () => {
     }));
   });
 
+  describe('out-of-stock products', () => {
+    it('applies the .oos-card class to a product card when stock is 0', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct({ stock: 0 })]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('mat-card').classList).toContain('oos-card');
+    });
+
+    it('shows the out-of-stock label instead of the Add button when stock is 0', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct({ stock: 0 })]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.oos-label')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('button[color="primary"]')).toBeNull();
+    });
+
+    it('shows the Add button and no oos-label for an in-stock product', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct({ stock: 10 })]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('button[color="primary"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.oos-label')).toBeNull();
+    });
+
+    it('does not apply .oos-card to a card with stock remaining', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct({ stock: 5 })]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('mat-card').classList).not.toContain('oos-card');
+    });
+  });
+
   describe('category selection', () => {
     it('appends the category param when a category is active', fakeAsync(() => {
       const { fixture, component, httpMock } = setup();
