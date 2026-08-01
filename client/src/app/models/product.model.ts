@@ -14,5 +14,6 @@ export interface Product {
   unit: string;
   stock: number;
   featured: boolean;
+  farmFeatured?: boolean;
   farm?: FarmRef | null;
 }

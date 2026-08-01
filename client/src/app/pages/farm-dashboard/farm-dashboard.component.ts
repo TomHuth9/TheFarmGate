@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -42,6 +42,9 @@ export class FarmDashboardComponent implements OnInit {
   editingId = signal<string | null>(null);
   saving = signal(false);
   error = signal('');
+
+  togglingFeaturedId = signal<string | null>(null);
+  farmFeaturedCount = computed(() => this.products().filter(p => p.farmFeatured).length);
 
   orders = signal<Order[]>([]);
   updatingOrderId = signal<string | null>(null);
@@ -148,5 +151,19 @@ export class FarmDashboardComponent implements OnInit {
   delete(product: Product) {
     if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
     this.productService.delete(product._id).subscribe(() => this.loadProducts());
+  }
+
+  toggleFarmFeatured(product: Product) {
+    this.togglingFeaturedId.set(product._id);
+    this.productService.update(product._id, { farmFeatured: !product.farmFeatured }).subscribe({
+      next: (updated) => {
+        this.products.update(list => list.map(p => p._id === updated._id ? updated : p));
+        this.togglingFeaturedId.set(null);
+      },
+      error: (err) => {
+        this.error.set(err.error?.message ?? 'Failed to update featured status');
+        this.togglingFeaturedId.set(null);
+      },
+    });
   }
 }

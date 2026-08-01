@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -24,6 +24,7 @@ export class FarmProfileComponent implements OnInit {
 
   farm = signal<Farm | null>(null);
   products = signal<Product[]>([]);
+  featuredProducts = computed(() => this.products().filter(p => p.farmFeatured));
   loading = signal(true);
 
   ngOnInit() {

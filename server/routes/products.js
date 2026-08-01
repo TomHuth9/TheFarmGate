@@ -102,6 +102,8 @@ router.put('/:id', protect, farmOrAdmin, mongoIdParam, [
   body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
   body('imageUrl').optional({ checkFalsy: true }).trim().isURL(),
   body('stock').optional().isInt({ min: 0, max: 99999 }),
+  body('featured').optional().isBoolean().withMessage('featured must be a boolean'),
+  body('farmFeatured').optional().isBoolean().withMessage('farmFeatured must be a boolean'),
   handleValidationErrors,
 ], async (req, res) => {
   try {
@@ -112,11 +114,29 @@ router.put('/:id', protect, farmOrAdmin, mongoIdParam, [
       return res.status(403).json({ message: 'Not authorised to edit this product' });
     }
 
-    // Only allow safe fields — never let a client reassign the farm owner
-    const { name, description, price, category, unit, imageUrl, stock, featured } = req.body;
-    const updates = { name, description, price, category, unit, imageUrl, stock, featured };
-    // Remove undefined keys so Mongoose doesn't overwrite with undefined
+    // Only allow safe base fields — never let a client reassign the farm owner
+    const { name, description, price, category, unit, imageUrl, stock } = req.body;
+    const updates = { name, description, price, category, unit, imageUrl, stock };
     Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+
+    if (req.user.role === 'farm') {
+      // Farms manage their own store-page featured list (max 5), not the homepage flag
+      if (req.body.featured !== undefined) {
+        return res.status(403).json({ message: 'Only admins can set homepage featured status' });
+      }
+      if (req.body.farmFeatured !== undefined) {
+        if (req.body.farmFeatured === true && !product.farmFeatured) {
+          const count = await Product.countDocuments({ farm: req.user.id, farmFeatured: true });
+          if (count >= 5) {
+            return res.status(422).json({ message: 'You can feature at most 5 products on your store page' });
+          }
+        }
+        updates.farmFeatured = req.body.farmFeatured;
+      }
+    } else {
+      // Admins manage the homepage featured flag; farmFeatured is farm-managed only
+      if (req.body.featured !== undefined) updates.featured = req.body.featured;
+    }
 
     const updated = await Product.findByIdAndUpdate(req.params.id, updates, {
       new: true, runValidators: true,

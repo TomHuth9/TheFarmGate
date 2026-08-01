@@ -64,6 +64,24 @@
     }
   }
 
+  .featured-strip {
+    background: var(--color-cream);
+    border-bottom: 1px solid #e0d5c4;
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .title-star {
+        color: #f5a623;
+        font-size: 1.4rem;
+        height: 1.4rem;
+        width: 1.4rem;
+      }
+    }
+  }
+
   .empty-state {
     color: #777;
     font-size: 1.1rem;

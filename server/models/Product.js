@@ -13,7 +13,8 @@ const productSchema = new mongoose.Schema(
     imageUrl: { type: String, default: '' },
     unit: { type: String, default: 'each' }, // e.g. "per kg", "per dozen", "each"
     stock: { type: Number, default: 100 },
-    featured: { type: Boolean, default: false },
+    featured: { type: Boolean, default: false },    // admin-controlled: appears on homepage
+    farmFeatured: { type: Boolean, default: false }, // farm-controlled: appears at top of farm store page (max 5)
 
     // Farm that listed this product (null for admin-created products)
     farm: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

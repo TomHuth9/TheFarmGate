@@ -13,6 +13,10 @@
       <mat-tab label="Products">
         <div class="tab-content">
           <div class="tab-actions">
+            <span class="featured-counter">
+              <mat-icon class="counter-star">star</mat-icon>
+              {{ farmFeaturedCount() }}/5 featured on store page
+            </span>
             <button type="button" mat-raised-button color="primary" (click)="openAdd()">
               <mat-icon>add</mat-icon> Add Product
             </button>
@@ -111,6 +115,13 @@
                   </div>
                   <span class="product-price">{{ p.price | currency:'GBP' }}</span>
                   <div class="row-actions">
+                    <button type="button" mat-icon-button
+                      [class.star-active]="p.farmFeatured"
+                      [disabled]="togglingFeaturedId() === p._id || (!p.farmFeatured && farmFeaturedCount() >= 5)"
+                      (click)="toggleFarmFeatured(p)"
+                      [attr.aria-label]="p.farmFeatured ? 'Remove from store highlights' : 'Add to store highlights'">
+                      <mat-icon>{{ p.farmFeatured ? 'star' : 'star_border' }}</mat-icon>
+                    </button>
                     <button type="button" mat-icon-button (click)="openEdit(p)" aria-label="Edit">
                       <mat-icon>edit</mat-icon>
                     </button>
