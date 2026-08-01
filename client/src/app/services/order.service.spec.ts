@@ -95,7 +95,7 @@ describe('OrderService', () => {
 
     it('returns the response body as an Order array', () => {
       const mockOrder = { _id: 'o1', total: 3.00, status: 'pending' as const, items: [], createdAt: '' };
-      let result: Order[];
+      let result!: Order[];
       service.getFarmOrders().subscribe((orders) => (result = orders));
       httpMock.expectOne(`${BASE}/farm`).flush([mockOrder]);
       expect(result).toHaveSize(1);
@@ -114,7 +114,7 @@ describe('OrderService', () => {
 
     it('returns the updated order', () => {
       const updated = { _id: 'order123', total: 3.00, status: 'dispatched' as const, items: [], createdAt: '' };
-      let result: Order;
+      let result!: Order;
       service.updateStatus('order123', 'dispatched').subscribe((o) => (result = o));
       httpMock.expectOne(`${BASE}/order123/status`).flush(updated);
       expect(result.status).toBe('dispatched');
