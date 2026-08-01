@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, param } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { protect, adminOnly, farmOrAdmin } = require('../middleware/auth');
@@ -24,15 +24,25 @@ router.post('/', protect, orderRules, handleValidationErrors, async (req, res) =
   try {
     const { items, deliveryAddress, notes, centre } = req.body;
 
-    // Look up current prices from the database — never trust client-supplied prices
+    // Look up current prices and stock from the database — never trust client-supplied values
     const productIds = items.map((i) => i.product);
-    const products = await Product.find({ _id: { $in: productIds } }).select('_id name price');
+    const products = await Product.find({ _id: { $in: productIds } }).select('_id name price stock');
     const priceMap = Object.fromEntries(products.map((p) => [String(p._id), p]));
 
     // Reject if any product ID doesn't exist
     for (const item of items) {
       if (!priceMap[item.product]) {
         return res.status(422).json({ message: `Product not found: ${item.product}` });
+      }
+    }
+
+    // Reject if any requested quantity exceeds available stock
+    for (const item of items) {
+      const product = priceMap[item.product];
+      if (product.stock < item.quantity) {
+        return res.status(422).json({
+          message: `Insufficient stock for "${product.name}": only ${product.stock} available`,
+        });
       }
     }
 
@@ -53,6 +63,16 @@ router.post('/', protect, orderRules, handleValidationErrors, async (req, res) =
       notes,
       centre: centre || undefined,
     });
+
+    // Decrement stock for each ordered item
+    await Product.bulkWrite(
+      verifiedItems.map((item) => ({
+        updateOne: {
+          filter: { _id: item.product },
+          update: { $inc: { stock: -item.quantity } },
+        },
+      }))
+    );
 
     res.status(201).json(order);
   } catch (err) {
@@ -139,12 +159,22 @@ router.get('/:id', protect, [
 });
 
 // GET /api/orders — admin only
-router.get('/', protect, adminOnly, async (req, res) => {
+router.get('/', protect, adminOnly, [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+  handleValidationErrors,
+], async (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
+
     const orders = await Order.find()
       .populate('user', 'name email')
       .populate('centre', 'name')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: 'Could not fetch orders' });

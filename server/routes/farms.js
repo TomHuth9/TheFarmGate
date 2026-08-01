@@ -1,5 +1,5 @@
 const express = require('express');
-const { param } = require('express-validator');
+const { param, query } = require('express-validator');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const { handleValidationErrors } = require('../middleware/validate');
@@ -7,11 +7,21 @@ const { handleValidationErrors } = require('../middleware/validate');
 const router = express.Router();
 
 // GET /api/farms — list all farm accounts (public)
-router.get('/', async (req, res) => {
+router.get('/', [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+  handleValidationErrors,
+], async (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
+
     const farms = await User.find({ role: 'farm' })
       .select('farmName farmDescription farmLocation name createdAt')
-      .sort({ farmName: 1 });
+      .sort({ farmName: 1 })
+      .skip(skip)
+      .limit(limit);
     res.json(farms);
   } catch (err) {
     res.status(500).json({ message: 'Could not fetch farms' });

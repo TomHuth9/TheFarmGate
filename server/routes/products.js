@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const { protect, farmOrAdmin } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
 
@@ -26,6 +27,8 @@ const mongoIdParam = [
 router.get('/', [
   query('category').optional().isIn(CATEGORIES).withMessage('Invalid category'),
   query('farm').optional().isMongoId().withMessage('Invalid farm ID'),
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   handleValidationErrors,
 ], async (req, res) => {
   try {
@@ -34,9 +37,15 @@ router.get('/', [
     if (req.query.featured === 'true') filter.featured = true;
     if (req.query.farm) filter.farm = req.query.farm;
 
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
+
     const products = await Product.find(filter)
       .populate('farm', 'farmName farmLocation')
-      .sort({ category: 1, name: 1 });
+      .sort({ category: 1, name: 1 })
+      .skip(skip)
+      .limit(limit);
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: 'Could not fetch products' });
@@ -55,13 +64,27 @@ router.get('/:id', mongoIdParam, handleValidationErrors, async (req, res) => {
 });
 
 // POST /api/products — farm or admin
-router.post('/', protect, farmOrAdmin, productRules, handleValidationErrors, async (req, res) => {
+router.post('/', protect, farmOrAdmin, [
+  ...productRules,
+  body('farm').optional().isMongoId().withMessage('Invalid farm ID'),
+  handleValidationErrors,
+], async (req, res) => {
   try {
     const { name, description, price, category, unit, imageUrl, stock } = req.body;
     const data = { name, description, price, category, unit, imageUrl, stock };
 
-    // Farms are always the owner — never trust a farm field from the request body
-    if (req.user.role === 'farm') data.farm = req.user.id;
+    if (req.user.role === 'farm') {
+      // Farms are always the owner — never trust a farm field from the request body
+      data.farm = req.user.id;
+    } else {
+      // Admins must explicitly assign the product to a farm account
+      if (!req.body.farm) {
+        return res.status(422).json({ message: 'A farm must be assigned when creating a product as admin' });
+      }
+      const farm = await User.findOne({ _id: req.body.farm, role: 'farm' });
+      if (!farm) return res.status(422).json({ message: 'Farm not found' });
+      data.farm = req.body.farm;
+    }
 
     const product = await Product.create(data);
     res.status(201).json(product);
