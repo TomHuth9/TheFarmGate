@@ -2,71 +2,123 @@
   <div class="container">
     @if (loading()) {
       <div class="spinner-wrap"><mat-spinner diameter="48" /></div>
-    } @else if (product()) {
+    } @else if (product(); as p) {
+
       <a mat-button routerLink="/browse" class="back-link">
         <mat-icon>arrow_back</mat-icon> Back to Shop
       </a>
 
       <div class="detail-grid">
+
+        <!-- ── Image ──────────────────────────────────────── -->
         <div class="detail-image">
-          @if (product()!.imageUrl) {
-            <img [src]="product()!.imageUrl" [alt]="product()!.name" [title]="product()!.name" />
+          @if (p.imageUrl) {
+            <img [src]="p.imageUrl" [alt]="p.name" [title]="p.name" />
           } @else {
-            <div class="detail-img-placeholder" role="img" [attr.aria-label]="product()!.name" [attr.title]="product()!.name">
+            <div class="detail-img-placeholder" role="img" [attr.aria-label]="p.name" [attr.title]="p.name">
               <mat-icon aria-hidden="true">eco</mat-icon>
             </div>
           }
         </div>
 
+        <!-- ── Info panel ─────────────────────────────────── -->
         <div class="detail-info">
-          <p class="product-category">{{ product()!.category }}</p>
-          <h1>{{ product()!.name }}</h1>
-          @if (product()!.farm) {
-            <a class="farm-link" [routerLink]="['/farms', product()!.farm!._id]">
+          <p class="product-category">{{ p.category }}</p>
+          <h1>{{ p.name }}</h1>
+
+          @if (p.farm) {
+            <a class="farm-link" [routerLink]="['/farms', p.farm._id]">
               <mat-icon>agriculture</mat-icon>
-              {{ product()!.farm!.farmName }}
-              @if (product()!.farm!.farmLocation) {
-                <span class="farm-loc"> · {{ product()!.farm!.farmLocation }}</span>
+              {{ p.farm.farmName }}
+              @if (p.farm.farmLocation) {
+                <span class="farm-loc"> · {{ p.farm.farmLocation }}</span>
               }
             </a>
           }
-          <p class="product-desc">{{ product()!.description }}</p>
+
+          <p class="product-desc">{{ p.description }}</p>
 
           <div class="price-row">
-            <span class="price">{{ product()!.price | currency:'GBP' }}</span>
-            <span class="unit">{{ product()!.unit }}</span>
+            <span class="price">{{ p.price | currency:'GBP' }}</span>
+            <span class="unit">per {{ p.unit }}</span>
           </div>
 
-          <div class="qty-row">
-            <button type="button" mat-icon-button (click)="changeQty(-1)" [disabled]="quantity() <= 1">
-              <mat-icon>remove</mat-icon>
-            </button>
-            <span class="qty-display">{{ quantity() }}</span>
-            <button type="button" mat-icon-button (click)="changeQty(1)">
-              <mat-icon>add</mat-icon>
-            </button>
-          </div>
+          @if (p.stock === 0) {
 
-          @if (product()!.stock === 0) {
             <div class="oos-notice">
               <mat-icon>remove_shopping_cart</mat-icon>
               This product is currently out of stock.
             </div>
+
           } @else {
+
+            <div class="qty-row">
+              <span class="qty-label">Quantity</span>
+              <div class="qty-controls">
+                <button type="button" mat-icon-button (click)="changeQty(-1)" [disabled]="quantity() <= 1">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span class="qty-display">{{ quantity() }}</span>
+                <button type="button" mat-icon-button (click)="changeQty(1)" [disabled]="quantity() >= p.stock">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+              <span class="stock-hint">{{ p.stock }} available</span>
+            </div>
+
+            @if (basketQty() > 0) {
+              <p class="basket-notice">
+                <mat-icon>shopping_basket</mat-icon>
+                {{ basketQty() }} {{ basketQty() === 1 ? 'item' : 'items' }} already in your basket
+              </p>
+            }
+
             <button type="button" mat-raised-button color="primary" class="add-btn" (click)="addToBasket()">
               @if (added()) {
-                <ng-container>
-                  <mat-icon>check</mat-icon> Added!
-                </ng-container>
+                <mat-icon>check</mat-icon> Added to Basket!
               } @else {
-                <ng-container>
-                  <mat-icon>shopping_basket</mat-icon> Add to Basket
-                </ng-container>
+                <mat-icon>shopping_basket</mat-icon> Add to Basket
               }
             </button>
+
           }
         </div>
       </div>
+
+      <!-- ── More from this farm ────────────────────────────── -->
+      @if (relatedLoading()) {
+        <div class="spinner-wrap"><mat-spinner diameter="36" /></div>
+      } @else if (relatedProducts().length > 0) {
+        <section class="related-section">
+          <h2 class="related-title">
+            More from
+            @if (p.farm) {
+              <a [routerLink]="['/farms', p.farm._id]">{{ p.farm.farmName }}</a>
+            } @else {
+              this farm
+            }
+          </h2>
+          <div class="related-grid">
+            @for (rp of relatedProducts(); track rp._id) {
+              <a class="related-card" [routerLink]="['/product', rp._id]">
+                @if (rp.imageUrl) {
+                  <img class="related-img" [src]="rp.imageUrl" [alt]="rp.name" [title]="rp.name" />
+                } @else {
+                  <div class="related-img related-img-placeholder">
+                    <mat-icon>eco</mat-icon>
+                  </div>
+                }
+                <div class="related-info">
+                  <p class="related-category">{{ rp.category }}</p>
+                  <p class="related-name">{{ rp.name }}</p>
+                  <p class="related-price">{{ rp.price | currency:'GBP' }} <span>per {{ rp.unit }}</span></p>
+                </div>
+              </a>
+            }
+          </div>
+        </section>
+      }
+
     } @else {
       <p class="empty-state">Product not found.</p>
     }

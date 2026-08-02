@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,25 +24,50 @@ export class ProductDetailComponent implements OnInit {
   quantity = signal(1);
   loading = signal(true);
   added = signal(false);
+  relatedProducts = signal<Product[]>([]);
+  relatedLoading = signal(false);
+
+  basketQty = computed(() => {
+    const p = this.product();
+    if (!p) return 0;
+    return this.basket.items().find((i) => i.product._id === p._id)?.quantity ?? 0;
+  });
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id')!;
     this.productService.getById(id).subscribe({
-      next: (p) => { this.product.set(p); this.loading.set(false); },
+      next: (p) => {
+        this.product.set(p);
+        this.loading.set(false);
+        if (p.farm?._id) {
+          this.loadRelated(p._id, p.farm._id);
+        }
+      },
       error: () => this.loading.set(false),
     });
   }
 
   addToBasket() {
     const p = this.product();
-    if (p) {
-      this.basket.add(p, this.quantity());
-      this.added.set(true);
-      setTimeout(() => this.added.set(false), 2000);
-    }
+    if (!p) return;
+    this.basket.add(p, this.quantity());
+    this.added.set(true);
+    setTimeout(() => this.added.set(false), 2000);
   }
 
   changeQty(delta: number) {
-    this.quantity.update((q) => Math.max(1, q + delta));
+    const max = this.product()?.stock ?? Infinity;
+    this.quantity.update((q) => Math.min(max, Math.max(1, q + delta)));
+  }
+
+  private loadRelated(currentId: string, farmId: string) {
+    this.relatedLoading.set(true);
+    this.productService.getAll(undefined, farmId).subscribe({
+      next: (products) => {
+        this.relatedProducts.set(products.filter((p) => p._id !== currentId).slice(0, 4));
+        this.relatedLoading.set(false);
+      },
+      error: () => this.relatedLoading.set(false),
+    });
   }
 }
