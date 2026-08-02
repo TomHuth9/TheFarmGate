@@ -1,4 +1,4 @@
-import { Injectable, signal, inject, PLATFORM_ID, afterNextRender } from '@angular/core';
+import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -13,15 +13,12 @@ export class AuthService {
   private readonly USER_KEY = 'tfg_user';
   private readonly platformId = inject(PLATFORM_ID);
 
-  // Starts null so server and client render identically (avoids hydration mismatch).
-  // Populated from localStorage after the first client-side render via afterNextRender.
-  currentUser = signal<User | null>(null);
+  // On the server, isPlatformBrowser returns false so loadUserFromStorage returns null,
+  // which means SSR always renders the signed-out state (no localStorage on Node).
+  // In the browser the real stored value is used immediately.
+  currentUser = signal<User | null>(this.loadUserFromStorage());
 
-  constructor(private http: HttpClient, private router: Router) {
-    afterNextRender(() => {
-      this.currentUser.set(this.loadUserFromStorage());
-    });
-  }
+  constructor(private http: HttpClient, private router: Router) {}
 
   register(
     name: string,

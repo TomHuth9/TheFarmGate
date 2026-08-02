@@ -183,6 +183,37 @@ describe('MyOrdersComponent', () => {
 
       expect(fixture.nativeElement.querySelectorAll('.item-row').length).toBe(2);
     });
+
+    it('shows the delivery address when expanded and an address is present', () => {
+      const order = mockOrder({
+        deliveryAddress: { line1: '5 Green Lane', city: 'Bath', postcode: 'BA1 1AA' },
+      });
+      const { fixture, httpMock } = setup(CUSTOMER);
+      fixture.detectChanges();
+      httpMock.expectOne(MY_ORDERS_URL).flush([order]);
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('.order-header').click();
+      fixture.detectChanges();
+
+      const address = fixture.nativeElement.querySelector('.delivery-address') as HTMLElement;
+      expect(address).toBeTruthy();
+      expect(address.textContent).toContain('5 Green Lane');
+      expect(address.textContent).toContain('Bath');
+    });
+
+    it('hides the delivery address row when no address is present', () => {
+      const order = mockOrder();
+      const { fixture, httpMock } = setup(CUSTOMER);
+      fixture.detectChanges();
+      httpMock.expectOne(MY_ORDERS_URL).flush([order]);
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('.order-header').click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.delivery-address')).toBeNull();
+    });
   });
 
   describe('cancelOrder()', () => {
