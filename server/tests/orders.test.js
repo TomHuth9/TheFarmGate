@@ -1,6 +1,7 @@
 ﻿const request = require('supertest');
 const app = require('../app');
 const User = require('../models/User');
+const Product = require('../models/Product');
 const { connectTestDB, disconnectTestDB, clearDB } = require('./helpers/db');
 
 beforeAll(connectTestDB);
@@ -404,5 +405,114 @@ describe('GET /api/orders', () => {
   it('returns 401 without a token', async () => {
     const res = await request(app).get('/api/orders');
     expect(res.status).toBe(401);
+  });
+});
+
+// ─── Stock management ─────────────────────────────────────────────────────────
+
+describe('stock management', () => {
+  it('decrements product stock when an order is placed', async () => {
+    const farm = await createFarm();
+    const product = await createProduct(farm.cookies, { stock: 10 });
+    const { cookies } = await createUser();
+
+    await request(app)
+      .post('/api/orders')
+      .set('Cookie', cookies)
+      .send({ items: [{ product: product._id, quantity: 3 }], deliveryAddress });
+
+    const updated = await Product.findById(product._id);
+    expect(updated.stock).toBe(7);
+  });
+
+  it('returns 422 and does not decrement stock when quantity exceeds available stock', async () => {
+    const farm = await createFarm();
+    const product = await createProduct(farm.cookies, { stock: 2 });
+    const { cookies } = await createUser();
+
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Cookie', cookies)
+      .send({ items: [{ product: product._id, quantity: 5 }], deliveryAddress });
+
+    expect(res.status).toBe(422);
+    expect(res.body.message).toMatch(/insufficient stock/i);
+
+    const unchanged = await Product.findById(product._id);
+    expect(unchanged.stock).toBe(2);
+  });
+
+  it('restores stock when a customer cancels a pending order', async () => {
+    const farm = await createFarm();
+    const product = await createProduct(farm.cookies, { stock: 10 });
+    const customer = await createUser();
+    const order = await placeOrder(customer.cookies, product._id); // quantity 2
+
+    await request(app)
+      .patch(`/api/orders/${order._id}/status`)
+      .set('Cookie', customer.cookies)
+      .send({ status: 'cancelled' });
+
+    const updated = await Product.findById(product._id);
+    expect(updated.stock).toBe(10);
+  });
+
+  it('restores stock when a farm cancels a confirmed order', async () => {
+    const farm = await createFarm();
+    const product = await createProduct(farm.cookies, { stock: 10 });
+    const customer = await createUser();
+    const order = await placeOrder(customer.cookies, product._id); // quantity 2
+
+    await request(app)
+      .patch(`/api/orders/${order._id}/status`)
+      .set('Cookie', farm.cookies)
+      .send({ status: 'confirmed' });
+
+    await request(app)
+      .patch(`/api/orders/${order._id}/status`)
+      .set('Cookie', farm.cookies)
+      .send({ status: 'cancelled' });
+
+    const updated = await Product.findById(product._id);
+    expect(updated.stock).toBe(10);
+  });
+
+  it('restores stock when a farm cancels a dispatched order', async () => {
+    const farm = await createFarm();
+    const product = await createProduct(farm.cookies, { stock: 10 });
+    const customer = await createUser();
+    const order = await placeOrder(customer.cookies, product._id); // quantity 2
+
+    for (const status of ['confirmed', 'dispatched']) {
+      await request(app)
+        .patch(`/api/orders/${order._id}/status`)
+        .set('Cookie', farm.cookies)
+        .send({ status });
+    }
+
+    await request(app)
+      .patch(`/api/orders/${order._id}/status`)
+      .set('Cookie', farm.cookies)
+      .send({ status: 'cancelled' });
+
+    const updated = await Product.findById(product._id);
+    expect(updated.stock).toBe(10);
+  });
+
+  it('does not restore stock when an order is delivered', async () => {
+    const farm = await createFarm();
+    const product = await createProduct(farm.cookies, { stock: 10 });
+    const customer = await createUser();
+    const order = await placeOrder(customer.cookies, product._id); // quantity 2
+
+    for (const status of ['confirmed', 'dispatched', 'delivered']) {
+      await request(app)
+        .patch(`/api/orders/${order._id}/status`)
+        .set('Cookie', farm.cookies)
+        .send({ status });
+    }
+
+    const updated = await Product.findById(product._id);
+    expect(updated.stock).toBe(8);
   });
 });
