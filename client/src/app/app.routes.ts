@@ -13,6 +13,7 @@ import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
 import { MyOrdersComponent } from './pages/my-orders/my-orders.component';
 import { FarmsComponent } from './pages/farms/farms.component';
+import { VerifyEmailComponent } from './pages/verify-email/verify-email.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -25,6 +26,7 @@ export const routes: Routes = [
   { path: 'register', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password/:token', component: ResetPasswordComponent },
+  { path: 'verify-email/:token', component: VerifyEmailComponent },
   { path: 'order-confirmation/:id', component: OrderConfirmationComponent },
   { path: 'farm-dashboard', component: FarmDashboardComponent },
   { path: 'admin-dashboard', component: AdminDashboardComponent },

@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema(
     farmDescription: { type: String },
     farmLocation: { type: String, trim: true }, // e.g. "Shropshire, UK"
 
+    // Email verification
+    emailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String },
+    emailVerificationExpires: { type: Date },
+
     // Password reset
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },

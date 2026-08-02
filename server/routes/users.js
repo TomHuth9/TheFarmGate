@@ -6,7 +6,7 @@ const User = require('../models/User');
 const Centre = require('../models/Centre');
 const { protect, adminOnly } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
-const { sendPasswordReset } = require('../utils/email');
+const { sendVerificationEmail, sendPasswordReset } = require('../utils/email');
 
 const router = express.Router();
 
@@ -64,17 +64,21 @@ router.post('/register', registerRules, handleValidationErrors, async (req, res)
       assignedCentre = await Centre.findOne({ servedPostcodes: prefix });
     }
 
-    const user = await User.create({
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    await User.create({
       name, email, password, postcode, assignedCentre,
       role: safeRole, farmName, farmDescription, farmLocation,
+      emailVerified: false,
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    const token = signToken(user);
-    setAuthCookie(res, token);
+    const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:4200';
+    await sendVerificationEmail(email, `${clientOrigin}/verify-email/${rawToken}`);
 
-    res.status(201).json({
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, farmName: user.farmName },
-    });
+    res.status(201).json({ requiresVerification: true });
   } catch (err) {
     res.status(500).json({ message: 'Registration failed' });
   }
@@ -90,6 +94,20 @@ router.post('/login', loginRules, handleValidationErrors, async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    // Strict false check so existing users without the field are unaffected
+    if (user.emailVerified === false) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      user.emailVerificationToken = hashedToken;
+      user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await user.save({ validateBeforeSave: false });
+
+      const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:4200';
+      await sendVerificationEmail(user.email, `${clientOrigin}/verify-email/${rawToken}`);
+
+      return res.json({ requiresVerification: true });
+    }
+
     const token = signToken(user);
     setAuthCookie(res, token);
 
@@ -98,6 +116,34 @@ router.post('/login', loginRules, handleValidationErrors, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: 'Login failed' });
+  }
+});
+
+// GET /api/users/verify-email/:token
+router.get('/verify-email/:token', [
+  param('token').isHexadecimal().isLength({ min: 64, max: 64 }).withMessage('Invalid token'),
+  handleValidationErrors,
+], async (req, res) => {
+  try {
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Verification link is invalid or has expired.' });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    res.json({ message: 'Email verified successfully. You can now sign in.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not verify email' });
   }
 });
 

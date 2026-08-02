@@ -1,6 +1,20 @@
 <div class="login-page section-pad">
   <div class="container">
     <div class="auth-card">
+
+      @if (pendingEmail()) {
+        <div class="verify-pending">
+          <mat-icon class="verify-icon" aria-hidden="true">mark_email_unread</mat-icon>
+          <h1 class="auth-title">Check your email</h1>
+          <p class="verify-msg">We've sent a verification link to</p>
+          <p class="verify-email">{{ pendingEmail() }}</p>
+          <p class="verify-sub">Click the link in the email to verify your account and continue.</p>
+          <button type="button" mat-stroked-button (click)="pendingEmail.set(''); error.set('')">
+            Back to Sign In
+          </button>
+        </div>
+      } @else {
+
       <h1 class="auth-title">The Farm Gate</h1>
 
       <mat-tab-group [selectedIndex]="activeTab()" (selectedIndexChange)="activeTab.set($event); error.set('')">
@@ -95,6 +109,7 @@
           </form>
         </mat-tab>
       </mat-tab-group>
+      } <!-- end @else -->
     </div>
   </div>
 </div>

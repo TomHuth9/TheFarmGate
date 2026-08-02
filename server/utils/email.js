@@ -97,6 +97,33 @@ function ctaButton(href, label) {
   </p>`;
 }
 
+// ─── sendVerificationEmail ────────────────────────────────────────────────────
+
+async function sendVerificationEmail(toEmail, verifyUrl) {
+  if (!process.env.EMAIL_HOST) {
+    console.log(`\n[Email Verification] Link for ${toEmail}:\n${verifyUrl}\n`);
+    return;
+  }
+
+  const html = layout('Verify your Farm Gate email address', `
+    <h2 style="margin:0 0 16px;color:#1f4f29;font-size:20px;">Welcome to The Farm Gate!</h2>
+    <p>Thanks for signing up. Please verify your email address to activate your account.</p>
+    <p>This link expires in <strong>24 hours</strong>.</p>
+    ${ctaButton(verifyUrl, 'Verify Email Address')}
+    <p style="margin-top:24px;font-size:13px;color:#888;">
+      If you did not create an account, you can safely ignore this email.
+    </p>
+  `);
+
+  await createTransporter().sendMail({
+    from: FROM,
+    to: toEmail,
+    subject: 'Verify your Farm Gate email address',
+    text: `Welcome to The Farm Gate!\n\nPlease verify your email address by visiting the link below (expires in 24 hours):\n\n${verifyUrl}\n\nIf you did not create an account, ignore this email.`,
+    html,
+  });
+}
+
 // ─── sendPasswordReset ────────────────────────────────────────────────────────
 
 async function sendPasswordReset(toEmail, resetUrl) {
@@ -272,4 +299,4 @@ async function sendStatusUpdate(user, order) {
   await createTransporter().sendMail({ from: FROM, to: user.email, subject, text, html });
 }
 
-module.exports = { sendPasswordReset, sendOrderConfirmation, sendOrderReceived, sendStatusUpdate };
+module.exports = { sendVerificationEmail, sendPasswordReset, sendOrderConfirmation, sendOrderReceived, sendStatusUpdate };

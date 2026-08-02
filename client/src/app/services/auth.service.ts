@@ -75,9 +75,15 @@ export class AuthService {
     return this.currentUser() !== null;
   }
 
+  verifyEmail(token: string) {
+    return this.http.get<{ message: string }>(`${this.API}/verify-email/${token}`);
+  }
+
   private handleAuth(res: AuthResponse) {
-    localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
-    this.currentUser.set(res.user);
+    if (res.user) {
+      localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
+      this.currentUser.set(res.user);
+    }
   }
 
   private clearSession() {

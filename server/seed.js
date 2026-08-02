@@ -89,6 +89,7 @@ async function seed() {
     email: 'admin@thefarmgate.co.uk',
     password: 'Admin1234!',
     role: 'admin',
+    emailVerified: true,
   }).save();
   console.log('Created admin: admin@thefarmgate.co.uk / Admin1234!');
 
@@ -98,6 +99,7 @@ async function seed() {
     email: 'meadowview@thefarmgate.co.uk',
     password: 'Farm1234!',
     role: 'farm',
+    emailVerified: true,
     farmName: 'Meadow View Farm',
     farmDescription:
       'A family-run mixed farm in the heart of Shropshire. We raise rare-breed cattle ' +
@@ -110,6 +112,7 @@ async function seed() {
     email: 'oakridge@thefarmgate.co.uk',
     password: 'Farm1234!',
     role: 'farm',
+    emailVerified: true,
     farmName: 'Oak Ridge Organics',
     farmDescription:
       'Certified organic smallholding in the Surrey Hills. We rear free-range pigs ' +
@@ -123,6 +126,7 @@ async function seed() {
     email: 'marshlanddairy@thefarmgate.co.uk',
     password: 'Farm1234!',
     role: 'farm',
+    emailVerified: true,
     farmName: 'Marshland Dairy',
     farmDescription:
       'Specialist dairy farm on the Somerset Levels. Our Friesian-cross herd graze ' +
@@ -159,6 +163,7 @@ async function seed() {
     email: 'sam@example.com',
     password: 'Password1!',
     role: 'customer',
+    emailVerified: true,
     postcode: 'SW16 3AB',
     assignedCentre: londonCentre._id,
   }).save();
@@ -168,6 +173,7 @@ async function seed() {
     email: 'jo@example.com',
     password: 'Password1!',
     role: 'customer',
+    emailVerified: true,
     postcode: 'M20 5QR',
     assignedCentre: manchesterCentre._id,
   }).save();

@@ -7,7 +7,8 @@ export interface User {
 }
 
 export interface AuthResponse {
-  user: User;
+  user?: User;
+  requiresVerification?: boolean;
 }
 
 export interface AdminUser {

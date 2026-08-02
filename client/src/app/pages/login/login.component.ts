@@ -3,6 +3,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -13,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [
     RouterLink, ReactiveFormsModule,
-    MatButtonModule, MatFormFieldModule, MatInputModule, MatTabsModule, MatSlideToggleModule,
+    MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTabsModule, MatSlideToggleModule,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
@@ -27,7 +28,8 @@ export class LoginComponent implements OnInit {
   activeTab = signal(0);
   error = signal('');
   loading = signal(false);
-  isFarm = signal(false); // toggle between customer and farm registration
+  isFarm = signal(false);
+  pendingEmail = signal('');
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -69,8 +71,12 @@ export class LoginComponent implements OnInit {
     const { email, password } = this.loginForm.value;
     this.auth.login(email!, password!).subscribe({
       next: (res) => {
-        // Redirect farms to their dashboard
-        if (res.user.role === 'farm') {
+        if (res.requiresVerification) {
+          this.pendingEmail.set(email!);
+          this.loading.set(false);
+          return;
+        }
+        if (res.user!.role === 'farm') {
           this.router.navigate(['/farm-dashboard']);
         } else {
           this.router.navigate(['/']);
@@ -90,10 +96,10 @@ export class LoginComponent implements OnInit {
     this.auth.register(name!, email!, password!, postcode ?? '', role, farmName ?? '', farmDescription ?? '', farmLocation ?? '')
       .subscribe({
         next: (res) => {
-          if (res.user.role === 'farm') {
-            this.router.navigate(['/farm-dashboard']);
-          } else {
-            this.router.navigate(['/']);
+          if (res.requiresVerification) {
+            this.pendingEmail.set(email!);
+            this.loading.set(false);
+            return;
           }
         },
         error: (err) => { this.error.set(err.error?.message ?? 'Registration failed'); this.loading.set(false); },

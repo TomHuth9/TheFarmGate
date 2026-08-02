@@ -1,0 +1,23 @@
+<div class="verify-page section-pad">
+  <div class="container">
+    <div class="verify-card">
+
+      @if (loading()) {
+        <mat-spinner diameter="48" />
+        <p class="verify-status">Verifying your email…</p>
+      } @else if (success()) {
+        <mat-icon class="status-icon success-icon" aria-hidden="true">check_circle</mat-icon>
+        <h1 class="verify-title">Email verified!</h1>
+        <p class="verify-status">Your account is now active. You can sign in and start shopping.</p>
+        <a mat-raised-button color="primary" routerLink="/login">Sign In</a>
+      } @else {
+        <mat-icon class="status-icon error-icon" aria-hidden="true">error_outline</mat-icon>
+        <h1 class="verify-title">Link expired</h1>
+        <p class="verify-status">This verification link is invalid or has expired.</p>
+        <p class="verify-hint">Sign in and we'll send you a fresh link automatically.</p>
+        <a mat-raised-button color="primary" routerLink="/login">Go to Sign In</a>
+      }
+
+    </div>
+  </div>
+</div>
