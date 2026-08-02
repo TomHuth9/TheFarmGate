@@ -1,7 +1,7 @@
 services:
   - type: web
     name: thefarmgate
-    env: node
+    runtime: node
     plan: free
     buildCommand: npm ci --prefix client && npm run build --prefix client && npm ci --prefix server
     startCommand: node server/server.js
