@@ -26,6 +26,7 @@ export interface Farm {
   farmName: string;
   farmDescription: string;
   farmLocation: string;
+  postcode?: string;
 }
 
 export interface FarmProfile {

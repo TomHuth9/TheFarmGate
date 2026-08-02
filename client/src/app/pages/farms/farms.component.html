@@ -6,10 +6,52 @@
       <p class="subtitle">Meet the farms behind your food</p>
     </div>
 
-    @if (loading()) {
-      <div class="spinner-wrap">
-        <mat-spinner diameter="48"></mat-spinner>
+    <!-- ── Postcode search ──────────────────────────────────── -->
+    <div class="postcode-search">
+      <mat-form-field appearance="outline" class="postcode-field">
+        <mat-label>Find farms near you</mat-label>
+        <mat-icon matPrefix>near_me</mat-icon>
+        <input matInput [formControl]="postcodeControl"
+          placeholder="Enter postcode, e.g. SW1A 1AA"
+          (keydown.enter)="search()" />
+        @if (postcodeControl.value) {
+          <button matSuffix mat-icon-button type="button" aria-label="Clear" (click)="clearSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+      <button mat-raised-button color="primary" type="button" class="search-btn"
+        [disabled]="searching() || !postcodeControl.value?.trim()"
+        (click)="search()">
+        @if (searching()) {
+          <mat-spinner diameter="18" class="btn-spinner"></mat-spinner>
+        } @else {
+          <mat-icon>search</mat-icon>
+        }
+        Find Nearby
+      </button>
+    </div>
+
+    @if (locationError()) {
+      <p class="location-error">
+        <mat-icon>error_outline</mat-icon>
+        {{ locationError() }}
+      </p>
+    }
+
+    @if (activePostcode()) {
+      <div class="location-active">
+        <mat-icon>check_circle</mat-icon>
+        Sorted by distance from <strong>{{ activePostcode() }}</strong>
+        <button mat-button type="button" class="clear-btn" (click)="clearSearch()">
+          <mat-icon>close</mat-icon> Clear
+        </button>
       </div>
+    }
+
+    <!-- ── Farm list ───────────────────────────────────────── -->
+    @if (loading()) {
+      <div class="spinner-wrap"><mat-spinner diameter="48"></mat-spinner></div>
     } @else if (farms().length === 0) {
       <div class="empty-state">
         <mat-icon>agriculture</mat-icon>
@@ -17,10 +59,18 @@
       </div>
     } @else {
       <div class="farm-grid">
-        @for (farm of farms(); track farm._id) {
+        @for (farm of sortedFarms(); track farm._id) {
           <div class="farm-card">
             <div class="farm-card-body">
-              <h2 class="farm-name">{{ farm.farmName || farm.name }}</h2>
+              <div class="farm-name-row">
+                <h2 class="farm-name">{{ farm.farmName || farm.name }}</h2>
+                @if (farm.distanceMi !== undefined) {
+                  <span class="distance-badge">
+                    <mat-icon>near_me</mat-icon>
+                    {{ farm.distanceMi }} mi
+                  </span>
+                }
+              </div>
               @if (farm.farmLocation) {
                 <p class="farm-location">
                   <mat-icon class="location-icon">place</mat-icon>

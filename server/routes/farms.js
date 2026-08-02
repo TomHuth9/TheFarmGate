@@ -18,7 +18,7 @@ router.get('/', [
     const skip = (page - 1) * limit;
 
     const farms = await User.find({ role: 'farm' })
-      .select('farmName farmDescription farmLocation name createdAt')
+      .select('farmName farmDescription farmLocation postcode name createdAt')
       .sort({ farmName: 1 })
       .skip(skip)
       .limit(limit);
