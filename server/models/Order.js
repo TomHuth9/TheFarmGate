@@ -24,6 +24,10 @@ const orderSchema = new mongoose.Schema(
       enum: ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'],
       default: 'pending',
     },
+    statusHistory: [{
+      status:    { type: String, required: true },
+      changedAt: { type: Date,   required: true, default: Date.now },
+    }],
     notes: { type: String },
   },
   { timestamps: true }

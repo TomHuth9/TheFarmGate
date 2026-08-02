@@ -168,15 +168,18 @@ router.get('/me', protect, async (req, res) => {
 // PATCH /api/users/me — update own profile
 router.patch('/me', protect, [
   body('name').optional().trim().notEmpty().withMessage('Name cannot be blank').isLength({ max: 100 }),
+  body('postcode').optional().trim().isLength({ max: 10 }).withMessage('Postcode too long')
+    .matches(/^[A-Z0-9 ]*$/i).withMessage('Postcode contains invalid characters'),
   body('farmName').optional().trim().isLength({ max: 100 }).withMessage('Farm name too long'),
   body('farmDescription').optional().trim().isLength({ max: 1000 }).withMessage('Farm description too long'),
   body('farmLocation').optional().trim().isLength({ max: 200 }).withMessage('Farm location too long'),
   handleValidationErrors,
 ], async (req, res) => {
   try {
-    const { name, farmName, farmDescription, farmLocation } = req.body;
+    const { name, postcode, farmName, farmDescription, farmLocation } = req.body;
     const update = {};
     if (name !== undefined) update.name = name;
+    if (postcode !== undefined) update.postcode = postcode;
     if (req.user.role === 'farm') {
       if (farmName !== undefined) update.farmName = farmName;
       if (farmDescription !== undefined) update.farmDescription = farmDescription;
@@ -184,7 +187,7 @@ router.patch('/me', protect, [
     }
 
     const user = await User.findByIdAndUpdate(req.user.id, update, { new: true, runValidators: true })
-      .select('name email role farmName farmDescription farmLocation');
+      .select('name email role postcode farmName farmDescription farmLocation');
 
     res.json(user);
   } catch (err) {

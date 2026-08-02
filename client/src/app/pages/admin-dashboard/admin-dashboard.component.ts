@@ -37,6 +37,7 @@ export class AdminDashboardComponent implements OnInit {
   users = signal<AdminUser[]>([]);
   updatingOrderId = signal<string | null>(null);
   updatingUserId = signal<string | null>(null);
+  togglingFeaturedId = signal<string | null>(null);
 
   readonly orderStatuses: OrderStatus[] = ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
 
@@ -102,6 +103,17 @@ export class AdminDashboardComponent implements OnInit {
     if (!confirm(`Delete user "${user.name}" (${user.email})? This cannot be undone.`)) return;
     this.adminService.deleteUser(user._id).subscribe(() => {
       this.users.update((list) => list.filter((u) => u._id !== user._id));
+    });
+  }
+
+  toggleFeatured(product: Product) {
+    this.togglingFeaturedId.set(product._id);
+    this.productService.update(product._id, { featured: !product.featured }).subscribe({
+      next: (updated) => {
+        this.products.update((list) => list.map((p) => (p._id === updated._id ? updated : p)));
+        this.togglingFeaturedId.set(null);
+      },
+      error: () => this.togglingFeaturedId.set(null),
     });
   }
 

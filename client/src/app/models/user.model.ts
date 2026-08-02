@@ -38,3 +38,11 @@ export interface FarmProfile {
   farmDescription?: string;
   farmLocation?: string;
 }
+
+export interface CustomerProfile {
+  _id: string;
+  name: string;
+  email: string;
+  role: 'customer';
+  postcode?: string;
+}

@@ -15,6 +15,11 @@ export interface OrderItem {
   quantity: number;
 }
 
+export interface StatusHistoryEntry {
+  status: OrderStatus;
+  changedAt: string;
+}
+
 export interface Order {
   _id: string;
   user?: { _id: string; name: string; email: string };
@@ -22,6 +27,7 @@ export interface Order {
   total: number;
   status: OrderStatus;
   createdAt: string;
+  statusHistory?: StatusHistoryEntry[];
   deliveryAddress?: {
     line1: string;
     line2?: string;

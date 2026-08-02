@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
-import { User, AuthResponse, FarmProfile } from '../models/user.model';
+import { User, AuthResponse, CustomerProfile, FarmProfile } from '../models/user.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -60,6 +60,21 @@ export class AuthService {
 
   getMe(): Observable<FarmProfile> {
     return this.http.get<FarmProfile>(`${this.API}/me`);
+  }
+
+  updateMe(data: { name?: string; postcode?: string }): Observable<CustomerProfile> {
+    return this.http.patch<CustomerProfile>(`${this.API}/me`, data).pipe(
+      tap((updated) => {
+        const current = this.currentUser();
+        if (current) {
+          const merged = { ...current, name: updated.name };
+          if (isPlatformBrowser(this.platformId)) {
+            localStorage.setItem(this.USER_KEY, JSON.stringify(merged));
+          }
+          this.currentUser.set(merged);
+        }
+      })
+    );
   }
 
   updateProfile(data: { name?: string; farmName?: string; farmDescription?: string; farmLocation?: string }) {

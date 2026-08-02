@@ -166,6 +166,97 @@
     }
   }
 
+  // ── Status timeline ──────────────────────────────────────────────
+  .order-timeline {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .timeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 72px;
+    text-align: center;
+    color: #bbb;
+
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+
+      mat-icon {
+        font-size: 1rem;
+        height: 1rem;
+        width: 1rem;
+      }
+    }
+
+    .step-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .step-date {
+      font-size: 0.68rem;
+      margin-top: 2px;
+    }
+
+    &.reached {
+      color: var(--color-green-dark);
+      .step-dot { border-color: var(--color-green-dark); background: var(--color-green-dark); color: #fff; }
+    }
+
+    &.cancelled.reached {
+      color: #b91c1c;
+      .step-dot { border-color: #b91c1c; background: #b91c1c; }
+    }
+  }
+
+  .timeline-connector {
+    flex: 1;
+    height: 2px;
+    background: #ddd;
+    margin-top: 13px;
+    min-width: 16px;
+
+    &.reached { background: var(--color-green-dark); }
+  }
+
+  // ── Reorder result ────────────────────────────────────────────────
+  .reorder-result {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+    font-size: 0.88rem;
+
+    .reorder-added, .reorder-oos {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 6px;
+
+      mat-icon { font-size: 1rem; height: 1rem; width: 1rem; flex-shrink: 0; }
+    }
+
+    .reorder-added { background: #d1e7dd; color: #0a3622; }
+    .reorder-oos   { background: #fff3cd; color: #856404; }
+  }
+
   .card-actions {
     display: flex;
     justify-content: flex-end;

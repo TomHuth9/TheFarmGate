@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
@@ -22,7 +23,7 @@ type SortKey = 'default' | 'price-asc' | 'price-desc' | 'name-asc';
   standalone: true,
   imports: [
     RouterLink, CurrencyPipe, ReactiveFormsModule,
-    MatButtonModule, MatButtonToggleModule, MatCardModule,
+    MatAutocompleteModule, MatButtonModule, MatButtonToggleModule, MatCardModule,
     MatFormFieldModule, MatIconModule, MatInputModule,
     MatProgressSpinnerModule, MatSelectModule,
   ],
@@ -40,6 +41,17 @@ export class BrowseComponent implements OnInit {
   activeCategory = signal<string>('');
   sort = signal<SortKey>('default');
   searchControl = new FormControl('');
+  searchTerm = signal('');
+
+  suggestions = computed<string[]>(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    if (term.length < 2) return [];
+    return [...new Set(
+      this.products()
+        .filter(p => p.name.toLowerCase().includes(term))
+        .map(p => p.name)
+    )].slice(0, 6);
+  });
 
   readonly categories = ['All', 'Dairy', 'Beef', 'Pork', 'Vegetables', 'Eggs', 'Poultry'];
 
@@ -67,6 +79,8 @@ export class BrowseComponent implements OnInit {
       this.searchControl.setValue('', { emitEvent: false });
       this.loadProducts(cat, '');
     });
+
+    this.searchControl.valueChanges.subscribe(v => this.searchTerm.set(v ?? ''));
 
     this.searchControl.valueChanges.pipe(
       debounceTime(300),

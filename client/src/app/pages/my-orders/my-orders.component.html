@@ -36,6 +36,29 @@
 
             @if (expandedId() === order._id) {
               <div class="order-body">
+
+                <!-- Status timeline -->
+                @if (order.statusHistory && order.statusHistory.length > 0) {
+                  <div class="order-timeline">
+                    @for (step of timelineSteps(order); track step.status; let last = $last) {
+                      <div class="timeline-step" [class.reached]="step.reached" [class.cancelled]="step.status === 'cancelled'">
+                        <div class="step-dot">
+                          @if (step.reached) {
+                            <mat-icon>{{ step.status === 'cancelled' ? 'cancel' : 'check_circle' }}</mat-icon>
+                          }
+                        </div>
+                        <div class="step-label">{{ step.status | titlecase }}</div>
+                        @if (step.changedAt) {
+                          <div class="step-date">{{ step.changedAt | date:'d MMM, HH:mm' }}</div>
+                        }
+                      </div>
+                      @if (!last) {
+                        <div class="timeline-connector" [class.reached]="step.reached"></div>
+                      }
+                    }
+                  </div>
+                }
+
                 <div class="items-list">
                   @for (item of order.items; track item.product) {
                     <div class="item-row">
@@ -61,10 +84,41 @@
                   </div>
                 }
 
+                <!-- Reorder result -->
+                @if (reorderResult() && reorderResult()!.orderId === order._id) {
+                  <div class="reorder-result">
+                    @if (reorderResult()!.added.length > 0) {
+                      <div class="reorder-added">
+                        <mat-icon>check_circle</mat-icon>
+                        Added to basket: {{ reorderResult()!.added.join(', ') }}
+                      </div>
+                    }
+                    @if (reorderResult()!.outOfStock.length > 0) {
+                      <div class="reorder-oos">
+                        <mat-icon>warning</mat-icon>
+                        Out of stock: {{ reorderResult()!.outOfStock.join(', ') }}
+                      </div>
+                    }
+                  </div>
+                }
+
                 <div class="card-actions">
                   <a mat-stroked-button [routerLink]="['/order-confirmation', order._id]">
                     <mat-icon>open_in_new</mat-icon> View Details
                   </a>
+
+                  @if (order.status === 'delivered') {
+                    <button type="button" mat-stroked-button color="primary"
+                      [disabled]="reorderingId() === order._id"
+                      (click)="reorder(order)">
+                      @if (reorderingId() === order._id) {
+                        <mat-spinner diameter="18"></mat-spinner>
+                      } @else {
+                        <mat-icon>replay</mat-icon> Reorder
+                      }
+                    </button>
+                  }
+
                   @if (order.status === 'pending') {
                     <button type="button" mat-stroked-button color="warn"
                       [disabled]="cancellingId() === order._id"

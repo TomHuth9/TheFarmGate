@@ -79,6 +79,14 @@
                   </div>
                   <span class="row-amount">{{ p.price | currency:'GBP' }}</span>
                   <div class="row-action-cell">
+                    <button type="button" mat-icon-button
+                      [color]="p.featured ? 'accent' : undefined"
+                      [disabled]="togglingFeaturedId() === p._id"
+                      (click)="toggleFeatured(p)"
+                      [attr.aria-label]="p.featured ? 'Remove from homepage' : 'Feature on homepage'"
+                      [title]="p.featured ? 'Remove from homepage' : 'Feature on homepage'">
+                      <mat-icon>{{ p.featured ? 'star' : 'star_border' }}</mat-icon>
+                    </button>
                     <button type="button" mat-icon-button color="warn"
                       (click)="deleteProduct(p)" aria-label="Delete product">
                       <mat-icon>delete_outline</mat-icon>

@@ -139,6 +139,7 @@ router.post('/', protect, orderRules, handleValidationErrors, async (req, res) =
       deliveryAddress,
       notes,
       centre: centre || undefined,
+      statusHistory: [{ status: 'pending', changedAt: new Date() }],
     });
 
     // Decrement stock for each ordered item
@@ -245,6 +246,7 @@ router.patch('/:id/status', protect, [
     }
 
     order.status = req.body.status;
+    order.statusHistory.push({ status: req.body.status, changedAt: new Date() });
     await order.save();
     res.json(order);
 
