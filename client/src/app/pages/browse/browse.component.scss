@@ -10,14 +10,40 @@
 
   .controls-row {
     display: flex;
-    flex-direction: column;
+    align-items: flex-start;
     gap: 16px;
-    margin-bottom: 32px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
   }
 
   .search-field {
-    width: 100%;
+    flex: 1;
+    min-width: 220px;
     max-width: 480px;
+  }
+
+  .sort-field {
+    width: 200px;
+  }
+
+  .result-count {
+    font-size: 0.85rem;
+    color: #999;
+    margin: 0 0 16px;
+  }
+
+  .product-farm {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.78rem;
+    color: var(--color-green-mid);
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 8px;
+
+    mat-icon { font-size: 0.85rem; height: 0.85rem; width: 0.85rem; }
+    &:hover { text-decoration: underline; }
   }
 
   .filter-bar {

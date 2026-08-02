@@ -29,6 +29,22 @@
       </div>
     </div>
 
+    <!-- Low-stock alert banner -->
+    @if (lowStockProducts().length > 0) {
+      <div class="low-stock-banner">
+        <mat-icon>warning</mat-icon>
+        <div class="low-stock-body">
+          <strong>Low stock alert</strong> —
+          {{ lowStockProducts().length }} product{{ lowStockProducts().length === 1 ? ' is' : 's are' }} running low:
+          @for (p of lowStockProducts(); track p._id; let last = $last) {
+            <span class="low-stock-item">
+              {{ p.name }} <span class="low-stock-qty">({{ p.stock }} left)</span>{{ last ? '' : ',' }}
+            </span>
+          }
+        </div>
+      </div>
+    }
+
     <mat-tab-group animationDuration="0ms" class="dashboard-tabs">
 
       <!-- PRODUCTS TAB -->

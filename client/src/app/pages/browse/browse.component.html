@@ -2,7 +2,7 @@
   <div class="container">
     <h1 class="page-title">{{ activeCategory() || 'All Products' }}</h1>
 
-    <!-- Search & category bar -->
+    <!-- Search + sort row -->
     <div class="controls-row">
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>Search products</mat-label>
@@ -15,16 +15,26 @@
         }
       </mat-form-field>
 
-      <div class="filter-bar">
-        @for (cat of categories; track cat) {
-          <button
-            type="button"
-            mat-stroked-button
-            [class.active]="(cat === 'All' && !activeCategory()) || cat === activeCategory()"
-            (click)="selectCategory(cat)"
-          >{{ cat }}</button>
-        }
-      </div>
+      <mat-form-field appearance="outline" class="sort-field">
+        <mat-label>Sort by</mat-label>
+        <mat-select [value]="sort()" (selectionChange)="sort.set($event.value)">
+          @for (opt of sortOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Category filter bar -->
+    <div class="filter-bar">
+      @for (cat of categories; track cat) {
+        <button
+          type="button"
+          mat-stroked-button
+          [class.active]="(cat === 'All' && !activeCategory()) || cat === activeCategory()"
+          (click)="selectCategory(cat)"
+        >{{ cat }}</button>
+      }
     </div>
 
     @if (loading()) {
@@ -32,8 +42,13 @@
         <mat-spinner diameter="48" />
       </div>
     } @else {
+
+      @if (displayProducts().length > 0) {
+        <p class="result-count">{{ displayProducts().length }} product{{ displayProducts().length === 1 ? '' : 's' }}</p>
+      }
+
       <div class="product-grid">
-        @for (product of products(); track product._id) {
+        @for (product of displayProducts(); track product._id) {
           <mat-card class="product-card" [class.oos-card]="product.stock === 0">
             <a [routerLink]="['/product', product._id]">
               @if (product.imageUrl) {
@@ -47,6 +62,11 @@
               <h3 class="product-name">
                 <a [routerLink]="['/product', product._id]">{{ product.name }}</a>
               </h3>
+              @if (product.farm?.farmName) {
+                <a class="product-farm" [routerLink]="['/farms', product.farm!._id]">
+                  <mat-icon>agriculture</mat-icon>{{ product.farm!.farmName }}
+                </a>
+              }
               <p class="product-desc">{{ product.description }}</p>
             </mat-card-content>
             <mat-card-actions>
@@ -66,7 +86,7 @@
         }
       </div>
 
-      @if (products().length === 0) {
+      @if (displayProducts().length === 0) {
         <p class="empty-state">
           @if (searchControl.value) {
             No products match "{{ searchControl.value }}".

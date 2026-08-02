@@ -5,6 +5,8 @@ const User = require('../models/User');
 const { protect, farmOrAdmin } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
 
+const reviewRoutes = require('./reviews');
+
 const router = express.Router();
 
 const CATEGORIES = ['Dairy', 'Beef', 'Pork', 'Vegetables', 'Eggs', 'Poultry'];
@@ -171,5 +173,8 @@ router.delete('/:id', protect, farmOrAdmin, mongoIdParam, handleValidationErrors
     res.status(500).json({ message: 'Could not delete product' });
   }
 });
+
+// Nested reviews resource — /api/products/:id/reviews
+router.use('/:id/reviews', reviewRoutes);
 
 module.exports = router;

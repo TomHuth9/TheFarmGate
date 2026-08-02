@@ -27,8 +27,42 @@
   </div>
 </section>
 
+<!-- Meet Our Farms -->
+@if (farms().length > 0) {
+  <section class="farms-section section-pad bg-cream">
+    <div class="container">
+      <h2 class="section-title">Meet Our Farms</h2>
+      <p class="section-subtitle">Every product is grown or reared by a named farm you can visit on this site.</p>
+      <div class="farms-grid">
+        @for (farm of farms(); track farm._id) {
+          <div class="farm-card">
+            <div class="farm-icon-wrap">
+              <mat-icon>agriculture</mat-icon>
+            </div>
+            <div class="farm-body">
+              <h3 class="farm-name">{{ farm.farmName }}</h3>
+              @if (farm.farmLocation) {
+                <p class="farm-location">
+                  <mat-icon>place</mat-icon>{{ farm.farmLocation }}
+                </p>
+              }
+              <p class="farm-desc">{{ farm.farmDescription }}</p>
+              <a mat-stroked-button [routerLink]="['/farms', farm._id]" class="farm-cta">
+                Visit Farm Shop
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="farms-footer">
+        <a mat-stroked-button routerLink="/farms">See all farms</a>
+      </div>
+    </div>
+  </section>
+}
+
 <!-- Featured Products -->
-<section class="featured section-pad bg-cream">
+<section class="featured section-pad">
   <div class="container">
     <h2 class="section-title">This Week's Picks</h2>
     <div class="product-grid">
@@ -53,11 +87,14 @@
         </mat-card>
       }
     </div>
+    <div class="featured-footer">
+      <a mat-stroked-button routerLink="/browse">Browse all products</a>
+    </div>
   </div>
 </section>
 
 <!-- Trust Strip -->
-<section class="trust section-pad">
+<section class="trust section-pad bg-cream">
   <div class="container trust-grid">
     <div class="trust-item">
       <mat-icon>verified</mat-icon>

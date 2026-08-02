@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,11 +8,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { CurrencyPipe } from '@angular/common';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ProductService } from '../../services/product.service';
 import { BasketService } from '../../services/basket.service';
 import { Product } from '../../models/product.model';
+
+type SortKey = 'default' | 'price-asc' | 'price-desc' | 'name-asc';
 
 @Component({
   selector: 'app-browse',
@@ -20,7 +23,8 @@ import { Product } from '../../models/product.model';
   imports: [
     RouterLink, CurrencyPipe, ReactiveFormsModule,
     MatButtonModule, MatButtonToggleModule, MatCardModule,
-    MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule,
+    MatFormFieldModule, MatIconModule, MatInputModule,
+    MatProgressSpinnerModule, MatSelectModule,
   ],
   templateUrl: './browse.component.html',
   styleUrl: './browse.component.scss',
@@ -34,9 +38,27 @@ export class BrowseComponent implements OnInit {
   products = signal<Product[]>([]);
   loading = signal(true);
   activeCategory = signal<string>('');
+  sort = signal<SortKey>('default');
   searchControl = new FormControl('');
 
   readonly categories = ['All', 'Dairy', 'Beef', 'Pork', 'Vegetables', 'Eggs', 'Poultry'];
+
+  readonly sortOptions: { value: SortKey; label: string }[] = [
+    { value: 'default',    label: 'Default order' },
+    { value: 'price-asc',  label: 'Price: low to high' },
+    { value: 'price-desc', label: 'Price: high to low' },
+    { value: 'name-asc',   label: 'Name: A – Z' },
+  ];
+
+  displayProducts = computed<Product[]>(() => {
+    const list = [...this.products()];
+    switch (this.sort()) {
+      case 'price-asc':  return list.sort((a, b) => a.price - b.price);
+      case 'price-desc': return list.sort((a, b) => b.price - a.price);
+      case 'name-asc':   return list.sort((a, b) => a.name.localeCompare(b.name));
+      default:           return list;
+    }
+  });
 
   ngOnInit() {
     this.route.paramMap.subscribe((params) => {
@@ -55,6 +77,7 @@ export class BrowseComponent implements OnInit {
   }
 
   selectCategory(cat: string) {
+    this.sort.set('default');
     if (cat === 'All') {
       this.router.navigate(['/browse']);
     } else {

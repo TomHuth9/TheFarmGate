@@ -36,6 +36,19 @@
             </a>
           }
 
+          <!-- Inline rating summary -->
+          @if (reviewPage(); as rp) {
+            @if (rp.count > 0) {
+              <div class="rating-summary">
+                @for (s of starsFor(rp.avgRating ?? 0); track $index) {
+                  <mat-icon class="star-icon">{{ starIcon(s) }}</mat-icon>
+                }
+                <span class="rating-avg">{{ (rp.avgRating ?? 0) | number:'1.1-1' }}</span>
+                <span class="rating-count">({{ rp.count }} {{ rp.count === 1 ? 'review' : 'reviews' }})</span>
+              </div>
+            }
+          }
+
           <p class="product-desc">{{ p.description }}</p>
 
           <div class="price-row">
@@ -118,6 +131,110 @@
           </div>
         </section>
       }
+
+      <!-- ── Reviews ───────────────────────────────────────── -->
+      <section class="reviews-section">
+        <h2 class="reviews-title">Customer Reviews</h2>
+
+        @if (reviewsLoading()) {
+          <div class="spinner-wrap"><mat-spinner diameter="36" /></div>
+        } @else if (reviewPage(); as rp) {
+
+          <!-- Aggregate header -->
+          @if (rp.count > 0) {
+            <div class="reviews-aggregate">
+              <span class="agg-score">{{ (rp.avgRating ?? 0) | number:'1.1-1' }}</span>
+              <div class="agg-stars">
+                @for (s of starsFor(rp.avgRating ?? 0); track $index) {
+                  <mat-icon class="star-icon large">{{ starIcon(s) }}</mat-icon>
+                }
+                <span class="agg-count">{{ rp.count }} {{ rp.count === 1 ? 'review' : 'reviews' }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- Review list -->
+          @if (rp.reviews.length > 0) {
+            <div class="review-list">
+              @for (review of rp.reviews; track review._id) {
+                <div class="review-card">
+                  <div class="review-header">
+                    <div class="review-stars">
+                      @for (s of starsFor(review.rating); track $index) {
+                        <mat-icon class="star-icon small">{{ starIcon(s) }}</mat-icon>
+                      }
+                    </div>
+                    <span class="review-author">{{ review.user.name }}</span>
+                    <span class="review-date">{{ review.createdAt | date:'d MMM yyyy' }}</span>
+                  </div>
+                  @if (review.body) {
+                    <p class="review-body">{{ review.body }}</p>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="no-reviews">No reviews yet — be the first!</p>
+          }
+
+          <!-- Write a review -->
+          @if (canReview()) {
+            @if (hasReviewed() || reviewSuccess()) {
+              <div class="review-thankyou">
+                <mat-icon>check_circle</mat-icon>
+                Thank you for your review!
+              </div>
+            } @else {
+              <div class="write-review">
+                <h3>Write a Review</h3>
+                <p class="write-review-note">You must have purchased this product to leave a review.</p>
+                <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+
+                  <div class="star-picker">
+                    @for (n of [1,2,3,4,5]; track n) {
+                      <button type="button"
+                        class="star-btn"
+                        (mouseenter)="hoverRating.set(n)"
+                        (mouseleave)="hoverRating.set(0)"
+                        (click)="setRating(n)"
+                        [attr.aria-label]="n + ' star' + (n > 1 ? 's' : '')">
+                        <mat-icon class="star-icon pick"
+                          [class.active]="n <= (hoverRating() || pendingRating())">
+                          {{ n <= (hoverRating() || pendingRating()) ? 'star' : 'star_border' }}
+                        </mat-icon>
+                      </button>
+                    }
+                    @if (pendingRating() > 0) {
+                      <span class="star-label">{{ pendingRating() }} star{{ pendingRating() > 1 ? 's' : '' }}</span>
+                    }
+                  </div>
+
+                  <mat-form-field appearance="outline" class="review-body-field">
+                    <mat-label>Your review (optional)</mat-label>
+                    <textarea matInput formControlName="body" rows="3"
+                              placeholder="What did you think of this product?"></textarea>
+                    <mat-hint align="end">{{ reviewForm.value.body?.length ?? 0 }}/500</mat-hint>
+                  </mat-form-field>
+
+                  @if (reviewError()) {
+                    <p class="review-error">{{ reviewError() }}</p>
+                  }
+
+                  <button type="submit" mat-raised-button color="primary"
+                          [disabled]="submitting() || !pendingRating()">
+                    @if (submitting()) {
+                      <mat-spinner diameter="20" />
+                    } @else {
+                      Submit Review
+                    }
+                  </button>
+
+                </form>
+              </div>
+            }
+          }
+        }
+      </section>
 
     } @else {
       <p class="empty-state">Product not found.</p>

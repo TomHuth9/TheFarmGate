@@ -5,7 +5,7 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const { protect, adminOnly, farmOrAdmin } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
-const { sendOrderConfirmation, sendOrderReceived, sendStatusUpdate } = require('../utils/email');
+const { sendOrderConfirmation, sendOrderReceived, sendStatusUpdate, sendLowStockAlert } = require('../utils/email');
 
 const router = express.Router();
 
@@ -63,6 +63,23 @@ async function notifyOrderPlaced(userId, productIds, verifiedItems, order) {
     }
   } catch (err) {
     console.error('[Email] notifyOrderPlaced failed:', err);
+  }
+}
+
+async function notifyLowStock(productIds) {
+  try {
+    const lowStock = await Product.find({
+      _id: { $in: productIds },
+      stock: { $gt: 0, $lte: 5 },
+    }).select('_id name stock farm').populate('farm', 'name email farmName');
+
+    for (const product of lowStock) {
+      if (!product.farm) continue;
+      sendLowStockAlert(product.farm, product)
+        .catch(err => console.error('[Email] Low-stock alert failed:', err));
+    }
+  } catch (err) {
+    console.error('[Email] notifyLowStock failed:', err);
   }
 }
 
@@ -138,6 +155,7 @@ router.post('/', protect, orderRules, handleValidationErrors, async (req, res) =
 
     // Email notifications — fire-and-forget after response is sent
     notifyOrderPlaced(req.user.id, productIds, verifiedItems, order);
+    notifyLowStock(productIds);
   } catch (err) {
     res.status(400).json({ message: 'Could not place order' });
   }

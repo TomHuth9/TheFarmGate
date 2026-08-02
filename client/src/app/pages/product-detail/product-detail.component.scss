@@ -260,6 +260,163 @@
     span { font-weight: 400; color: #888; }
   }
 
+  // ── Rating summary (inline, below farm link) ──────────────
+  .rating-summary {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 14px;
+
+    .rating-avg   { font-weight: 700; font-size: 0.95rem; color: var(--color-green-dark); margin-left: 2px; }
+    .rating-count { font-size: 0.85rem; color: #888; }
+  }
+
+  // ── Reviews section ────────────────────────────────────────
+  .reviews-section {
+    margin-top: 56px;
+    padding-top: 40px;
+    border-top: 1px solid #e8e0d4;
+  }
+
+  .reviews-title {
+    font-family: 'Georgia', serif;
+    font-size: 1.4rem;
+    color: var(--color-green-dark);
+    margin: 0 0 24px;
+  }
+
+  .reviews-aggregate {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding: 20px 24px;
+    background: var(--color-cream, #f7f2ea);
+    border-radius: 12px;
+    border: 1px solid #e8e0d4;
+
+    .agg-score {
+      font-family: 'Georgia', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--color-green-dark);
+      line-height: 1;
+    }
+
+    .agg-stars {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .agg-count { font-size: 0.9rem; color: #777; margin-left: 6px; }
+  }
+
+  // ── Shared star icon sizes ─────────────────────────────────
+  .star-icon {
+    color: #f59e0b;
+    font-size: 1.1rem;
+    height: 1.1rem;
+    width: 1.1rem;
+    vertical-align: middle;
+
+    &.large { font-size: 1.5rem; height: 1.5rem; width: 1.5rem; }
+    &.small { font-size: 0.95rem; height: 0.95rem; width: 0.95rem; }
+    &.pick  {
+      font-size: 1.8rem;
+      height: 1.8rem;
+      width: 1.8rem;
+      color: #ddd;
+      transition: color 0.1s;
+      &.active { color: #f59e0b; }
+    }
+  }
+
+  // ── Review list ────────────────────────────────────────────
+  .review-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+
+  .review-card {
+    padding: 20px;
+    border: 1px solid #e8e0d4;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .review-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+
+    .review-stars { display: flex; gap: 2px; }
+    .review-author { font-weight: 600; font-size: 0.9rem; color: var(--color-green-dark); }
+    .review-date   { font-size: 0.8rem; color: #aaa; margin-left: auto; }
+  }
+
+  .review-body { margin: 0; color: #555; line-height: 1.6; font-size: 0.95rem; }
+
+  .no-reviews { color: #999; font-style: italic; margin-bottom: 28px; }
+
+  // ── Review success ─────────────────────────────────────────
+  .review-thankyou {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f0faf2;
+    border: 1px solid #c8e6c9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    color: var(--color-green-dark);
+    font-weight: 500;
+    margin-bottom: 32px;
+
+    mat-icon { color: #43a047; }
+  }
+
+  // ── Write review form ──────────────────────────────────────
+  .write-review {
+    background: var(--color-cream, #f7f2ea);
+    border: 1px solid #e8e0d4;
+    border-radius: 12px;
+    padding: 28px;
+    margin-top: 8px;
+
+    h3 {
+      font-family: 'Georgia', serif;
+      font-size: 1.1rem;
+      color: var(--color-green-dark);
+      margin: 0 0 4px;
+    }
+
+    .write-review-note { font-size: 0.82rem; color: #999; margin: 0 0 20px; }
+  }
+
+  .star-picker {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 20px;
+
+    .star-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .star-label { font-size: 0.85rem; color: #666; margin-left: 10px; }
+  }
+
+  .review-body-field { width: 100%; }
+
+  .review-error {
+    color: #c62828;
+    font-size: 0.85rem;
+    margin: 0 0 12px;
+  }
+
   // ── Utilities ──────────────────────────────────────────────
   .spinner-wrap { display: flex; justify-content: center; padding: 60px 0; }
   .empty-state  { display: flex; justify-content: center; padding: 60px 0; color: #888; }

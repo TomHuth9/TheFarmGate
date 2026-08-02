@@ -47,7 +47,8 @@ export class FarmDashboardComponent implements OnInit {
   error = signal('');
 
   togglingFeaturedId = signal<string | null>(null);
-  farmFeaturedCount = computed(() => this.products().filter(p => p.farmFeatured).length);
+  farmFeaturedCount  = computed(() => this.products().filter(p => p.farmFeatured).length);
+  lowStockProducts   = computed(() => this.products().filter(p => p.stock > 0 && p.stock <= 5));
 
   totalRevenue = computed(() =>
     this.orders()

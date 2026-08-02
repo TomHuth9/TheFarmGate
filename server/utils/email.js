@@ -299,4 +299,46 @@ async function sendStatusUpdate(user, order) {
   await createTransporter().sendMail({ from: FROM, to: user.email, subject, text, html });
 }
 
-module.exports = { sendVerificationEmail, sendPasswordReset, sendOrderConfirmation, sendOrderReceived, sendStatusUpdate };
+// ─── sendLowStockAlert ────────────────────────────────────────────────────────
+// farmUser: { name, email, farmName }   product: { name, stock }
+
+async function sendLowStockAlert(farmUser, product) {
+  const farmName = farmUser.farmName || farmUser.name;
+  const subject = `Low stock alert: "${product.name}" – The Farm Gate`;
+
+  if (!process.env.EMAIL_HOST) {
+    console.log(`\n[Low Stock Alert] ${farmName}: "${product.name}" has ${product.stock} unit(s) remaining\n`);
+    return;
+  }
+
+  const html = layout(subject, `
+    <h2 style="margin:0 0 16px;color:#c62828;font-size:20px;">Low Stock Alert</h2>
+    <p>Hi ${farmName},</p>
+    <p>Your product <strong>${product.name}</strong> is running low and may sell out soon.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+      <tr>
+        <td style="background:#fff3f3;padding:20px 24px;border-radius:8px;border:1px solid #ffcdd2;">
+          <p style="margin:0 0 4px;font-size:13px;color:#888;text-transform:uppercase;letter-spacing:0.05em;">
+            Remaining Stock
+          </p>
+          <p style="margin:0;font-size:32px;font-weight:bold;color:#c62828;">${product.stock}</p>
+          <p style="margin:6px 0 0;font-size:14px;color:#555;">${product.name}</p>
+        </td>
+      </tr>
+    </table>
+    <p>Log in to update your stock level before it sells out.</p>
+    ${ctaButton(`${APP_URL}/farm-dashboard`, 'Update Stock')}
+  `);
+
+  const text = [
+    `Hi ${farmName},`,
+    ``,
+    `Low stock alert: "${product.name}" has only ${product.stock} unit(s) remaining.`,
+    ``,
+    `Log in to update your stock: ${APP_URL}/farm-dashboard`,
+  ].join('\n');
+
+  await createTransporter().sendMail({ from: FROM, to: farmUser.email, subject, text, html });
+}
+
+module.exports = { sendVerificationEmail, sendPasswordReset, sendOrderConfirmation, sendOrderReceived, sendStatusUpdate, sendLowStockAlert };
