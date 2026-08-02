@@ -150,6 +150,23 @@ body {
   }
 }
 
+// --- Image placeholder (shown when a product has no imageUrl) ---
+.img-placeholder {
+  height: 200px;
+  background: linear-gradient(135deg, var(--color-cream) 0%, #dce8dd 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 3rem;
+    height: 3rem;
+    width: 3rem;
+    color: var(--color-green-mid);
+    opacity: 0.35;
+  }
+}
+
 // --- Material overrides ---
 .mat-mdc-raised-button.mat-primary {
   background-color: var(--color-green-dark) !important;

@@ -10,11 +10,28 @@
     @media (max-width: 768px) { grid-template-columns: 1fr; }
   }
 
-  .detail-image img {
+  .detail-image img,
+  .detail-image .detail-img-placeholder {
     width: 100%;
     border-radius: 12px;
-    object-fit: cover;
     aspect-ratio: 4/3;
+  }
+
+  .detail-image img { object-fit: cover; }
+
+  .detail-img-placeholder {
+    background: linear-gradient(135deg, var(--color-cream) 0%, #dce8dd 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      font-size: 5rem;
+      height: 5rem;
+      width: 5rem;
+      color: var(--color-green-mid);
+      opacity: 0.3;
+    }
   }
 
   .detail-info {

@@ -9,7 +9,13 @@
 
       <div class="detail-grid">
         <div class="detail-image">
-          <img [src]="product()!.imageUrl" [alt]="product()!.name" [title]="product()!.name" />
+          @if (product()!.imageUrl) {
+            <img [src]="product()!.imageUrl" [alt]="product()!.name" [title]="product()!.name" />
+          } @else {
+            <div class="detail-img-placeholder" role="img" [attr.aria-label]="product()!.name" [attr.title]="product()!.name">
+              <mat-icon aria-hidden="true">eco</mat-icon>
+            </div>
+          }
         </div>
 
         <div class="detail-info">

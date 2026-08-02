@@ -34,7 +34,11 @@
     <div class="product-grid">
       @for (product of featured(); track product._id) {
         <mat-card class="product-card">
-          <img mat-card-image [src]="product.imageUrl" [alt]="product.name" [title]="product.name" class="product-img" />
+          @if (product.imageUrl) {
+            <img mat-card-image [src]="product.imageUrl" [alt]="product.name" [title]="product.name" class="product-img" />
+          } @else {
+            <div mat-card-image class="img-placeholder" role="img" [attr.aria-label]="product.name" [attr.title]="product.name"><mat-icon aria-hidden="true">eco</mat-icon></div>
+          }
           <mat-card-content>
             <p class="product-category">{{ product.category }}</p>
             <h3 class="product-name">{{ product.name }}</h3>
