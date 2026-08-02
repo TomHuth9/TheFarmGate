@@ -107,6 +107,7 @@ app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
 app.use('/api/users/forgot-password', authLimiter);
 app.use('/api/users/reset-password', authLimiter);
+app.use('/api/users/verify-email', authLimiter);
 
 // --- Routes
 app.use('/api/products', productRoutes);
@@ -121,11 +122,30 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 // --- Unmatched /api routes → 404 JSON (must come before the SPA fallback)
 app.use('/api/*', (req, res) => res.status(404).json({ message: 'Not found' }));
 
-// --- Serve Angular build in production
+// --- Serve Angular build in production (with SSR)
 if (process.env.NODE_ENV === 'production') {
-  const DIST = path.join(__dirname, '..', 'client', 'dist', 'client', 'browser');
-  app.use(express.static(DIST));
-  app.get('*', (req, res) => res.sendFile(path.join(DIST, 'index.html')));
+  const BROWSER = path.join(__dirname, '..', 'client', 'dist', 'client', 'browser');
+  const SERVER_BUNDLE = path.join(__dirname, '..', 'client', 'dist', 'client', 'server', 'server.mjs');
+
+  app.use(express.static(BROWSER, { index: false }));
+
+  // Lazily initialise the Angular SSR handler (promise cached after first load)
+  let ssrHandlerPromise = null;
+  const getSSRHandler = () => {
+    if (!ssrHandlerPromise) {
+      ssrHandlerPromise = import(SERVER_BUNDLE).then(({ app: ngApp }) => ngApp());
+    }
+    return ssrHandlerPromise;
+  };
+
+  app.get('*', async (req, res, next) => {
+    try {
+      const handler = await getSSRHandler();
+      handler(req, res, next);
+    } catch (err) {
+      next(err);
+    }
+  });
 }
 
 // --- Global error handler — never leak stack traces or Mongoose internals

@@ -1,4 +1,5 @@
-import { effect, Injectable, signal, computed } from '@angular/core';
+import { effect, Injectable, signal, computed, Injector, inject, PLATFORM_ID, afterNextRender } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Product } from '../models/product.model';
 import { BasketItem } from '../models/basket.model';
 
@@ -6,21 +7,33 @@ const STORAGE_KEY = 'tfg_basket';
 
 @Injectable({ providedIn: 'root' })
 export class BasketService {
-  items = signal<BasketItem[]>(this.load());
+  private platformId = inject(PLATFORM_ID);
+  private injector = inject(Injector);
 
-  // Total item count for the basket icon badge
+  // Starts empty so server and client render identically (avoids hydration mismatch).
+  // Populated from localStorage after the first client-side render via afterNextRender.
+  items = signal<BasketItem[]>([]);
+
   itemCount = computed(() => this.items().reduce((sum, i) => sum + i.quantity, 0));
 
-  // Grand total price
   total = computed(() =>
     this.items().reduce((sum, i) => sum + i.product.price * i.quantity, 0)
   );
 
   constructor() {
-    effect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items())));
+    afterNextRender(() => {
+      this.items.set(this.load());
+      // Set up localStorage persistence only after the initial load to avoid
+      // overwriting the stored basket before we've read it.
+      effect(
+        () => localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items())),
+        { injector: this.injector }
+      );
+    });
   }
 
   private load(): BasketItem[] {
+    if (!isPlatformBrowser(this.platformId)) return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       return stored ? (JSON.parse(stored) as BasketItem[]) : [];

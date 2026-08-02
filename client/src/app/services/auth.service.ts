@@ -1,8 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, PLATFORM_ID, afterNextRender } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
 import { User, AuthResponse, FarmProfile } from '../models/user.model';
 import { environment } from '../../environments/environment';
 
@@ -10,11 +11,17 @@ import { environment } from '../../environments/environment';
 export class AuthService {
   private readonly API = `${environment.apiUrl}/users`;
   private readonly USER_KEY = 'tfg_user';
+  private readonly platformId = inject(PLATFORM_ID);
 
-  // Reactive signal for current user state
-  currentUser = signal<User | null>(this.loadUserFromStorage());
+  // Starts null so server and client render identically (avoids hydration mismatch).
+  // Populated from localStorage after the first client-side render via afterNextRender.
+  currentUser = signal<User | null>(null);
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router) {
+    afterNextRender(() => {
+      this.currentUser.set(this.loadUserFromStorage());
+    });
+  }
 
   register(
     name: string,
@@ -64,7 +71,9 @@ export class AuthService {
         const current = this.currentUser();
         if (current) {
           const merged = { ...current, name: updated.name, farmName: updated.farmName };
-          localStorage.setItem(this.USER_KEY, JSON.stringify(merged));
+          if (isPlatformBrowser(this.platformId)) {
+            localStorage.setItem(this.USER_KEY, JSON.stringify(merged));
+          }
           this.currentUser.set(merged);
         }
       })
@@ -81,18 +90,23 @@ export class AuthService {
 
   private handleAuth(res: AuthResponse) {
     if (res.user) {
-      localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
+      if (isPlatformBrowser(this.platformId)) {
+        localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
+      }
       this.currentUser.set(res.user);
     }
   }
 
   private clearSession() {
-    localStorage.removeItem(this.USER_KEY);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem(this.USER_KEY);
+    }
     this.currentUser.set(null);
     this.router.navigate(['/']);
   }
 
   private loadUserFromStorage(): User | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
     try {
       const stored = localStorage.getItem(this.USER_KEY);
       return stored ? (JSON.parse(stored) as User) : null;

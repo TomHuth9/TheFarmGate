@@ -215,6 +215,17 @@ router.patch('/:id/status', protect, [
       });
     }
 
+    if (req.body.status === 'cancelled') {
+      await Product.bulkWrite(
+        order.items.map((item) => ({
+          updateOne: {
+            filter: { _id: item.product },
+            update: { $inc: { stock: item.quantity } },
+          },
+        }))
+      );
+    }
+
     order.status = req.body.status;
     await order.save();
     res.json(order);
