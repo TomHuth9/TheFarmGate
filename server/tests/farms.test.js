@@ -47,6 +47,19 @@ describe('GET /api/farms', () => {
     const res = await request(app).get('/api/farms');
     expect(res.body[0]).not.toHaveProperty('password');
   });
+
+  it('includes the postcode field when a farm has one', async () => {
+    await createFarm({ postcode: 'HE1 1AA' });
+    const res = await request(app).get('/api/farms');
+    expect(res.status).toBe(200);
+    expect(res.body[0].postcode).toBe('HE1 1AA');
+  });
+
+  it('omits the postcode field when a farm was registered without one', async () => {
+    await createFarm(); // no postcode override
+    const res = await request(app).get('/api/farms');
+    expect(res.body[0]).not.toHaveProperty('postcode');
+  });
 });
 
 describe('GET /api/farms/:id', () => {
