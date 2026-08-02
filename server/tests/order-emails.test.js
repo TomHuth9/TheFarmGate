@@ -7,6 +7,7 @@ jest.mock('../utils/email', () => ({
 
 const request = require('supertest');
 const app = require('../app');
+const User = require('../models/User');
 const email = require('../utils/email');
 const { connectTestDB, disconnectTestDB, clearDB } = require('./helpers/db');
 
@@ -19,28 +20,31 @@ afterEach(async () => {
 
 const deliveryAddress = { line1: '1 Farm Road', city: 'London', postcode: 'SW1 1AA' };
 
-async function registerUser(overrides = {}) {
+async function createUser(overrides = {}) {
   const defaults = {
     name: 'Test Customer',
     email: `customer_${Date.now()}_${Math.random().toString(36).slice(2)}@example.com`,
     password: 'password123',
   };
-  const payload = { ...defaults, ...overrides };
-  const res = await request(app).post('/api/users/register').send(payload);
-  return { cookies: res.headers['set-cookie'], id: res.body.user?.id, email: payload.email };
+  const merged = { ...defaults, ...overrides };
+  const user = await User.create({ ...merged, emailVerified: true });
+  const loginRes = await request(app).post('/api/users/login').send({ email: merged.email, password: merged.password });
+  return { cookies: loginRes.headers['set-cookie'], id: user.id, email: merged.email };
 }
 
-async function registerFarm() {
+async function createFarm() {
   const farmEmail = `farm_${Date.now()}_${Math.random().toString(36).slice(2)}@example.com`;
-  const res = await request(app).post('/api/users/register').send({
+  const user = await User.create({
     name: 'Farm Owner',
     email: farmEmail,
     password: 'password123',
     role: 'farm',
     farmName: 'Green Acres',
     farmLocation: 'Yorkshire, UK',
+    emailVerified: true,
   });
-  return { cookies: res.headers['set-cookie'], id: res.body.user?.id, email: farmEmail };
+  const loginRes = await request(app).post('/api/users/login').send({ email: farmEmail, password: 'password123' });
+  return { cookies: loginRes.headers['set-cookie'], id: user.id, email: farmEmail };
 }
 
 async function createProduct(cookies) {
@@ -57,9 +61,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 describe('POST /api/orders — email notifications', () => {
   it('sends an order confirmation email to the customer', async () => {
-    const farm = await registerFarm();
+    const farm = await createFarm();
     const product = await createProduct(farm.cookies);
-    const customer = await registerUser();
+    const customer = await createUser();
 
     await request(app)
       .post('/api/orders')
@@ -76,9 +80,9 @@ describe('POST /api/orders — email notifications', () => {
   });
 
   it('sends a farm notification email to the farm that owns the product', async () => {
-    const farm = await registerFarm();
+    const farm = await createFarm();
     const product = await createProduct(farm.cookies);
-    const customer = await registerUser();
+    const customer = await createUser();
 
     await request(app)
       .post('/api/orders')
@@ -100,9 +104,9 @@ describe('POST /api/orders — email notifications', () => {
 
 describe('PATCH /api/orders/:id/status — email notifications', () => {
   it('sends a status update email to the customer when the order status changes', async () => {
-    const farm = await registerFarm();
+    const farm = await createFarm();
     const product = await createProduct(farm.cookies);
-    const customer = await registerUser();
+    const customer = await createUser();
 
     const orderRes = await request(app)
       .post('/api/orders')
@@ -128,9 +132,9 @@ describe('PATCH /api/orders/:id/status — email notifications', () => {
   });
 
   it('does not send a status update email when the update fails', async () => {
-    const farm = await registerFarm();
+    const farm = await createFarm();
     const product = await createProduct(farm.cookies);
-    const customer = await registerUser();
+    const customer = await createUser();
 
     const orderRes = await request(app)
       .post('/api/orders')

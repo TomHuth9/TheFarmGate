@@ -8,8 +8,37 @@ beforeAll(connectTestDB);
 afterAll(disconnectTestDB);
 afterEach(clearDB);
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+// Creates a pre-verified user directly in the DB (bypasses the register
+// endpoint and its email-verification flow) so other tests can get a login
+// cookie without triggering the verification block.
+async function createVerifiedUser(overrides = {}) {
+  const defaults = {
+    name: 'Alice',
+    email: 'alice@example.com',
+    password: 'password123',
+  };
+  return User.create({ ...defaults, ...overrides, emailVerified: true });
+}
+
+async function loginAndGetCookies(email = 'alice@example.com', password = 'password123') {
+  const res = await request(app).post('/api/users/login').send({ email, password });
+  return res.headers['set-cookie'];
+}
+
+async function createVerifiedUserAndGetCookies(overrides = {}) {
+  await createVerifiedUser(overrides);
+  return loginAndGetCookies(
+    overrides.email || 'alice@example.com',
+    overrides.password || 'password123',
+  );
+}
+
+// ── POST /api/users/register ──────────────────────────────────────────────────
+
 describe('POST /api/users/register', () => {
-  it('creates a customer account and sets an auth cookie', async () => {
+  it('returns requiresVerification: true and no auth cookie', async () => {
     const res = await request(app).post('/api/users/register').send({
       name: 'Alice',
       email: 'alice@example.com',
@@ -17,11 +46,45 @@ describe('POST /api/users/register', () => {
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.token).toBeUndefined();
-    expect(res.headers['set-cookie']).toBeDefined();
-    expect(res.body.user.email).toBe('alice@example.com');
-    expect(res.body.user.role).toBe('customer');
-    expect(res.body.user).not.toHaveProperty('password');
+    expect(res.body.requiresVerification).toBe(true);
+    expect(res.body.user).toBeUndefined();
+    expect(res.headers['set-cookie']).toBeUndefined();
+  });
+
+  it('creates the user in the database with emailVerified: false', async () => {
+    await request(app).post('/api/users/register').send({
+      name: 'Alice',
+      email: 'alice@example.com',
+      password: 'password123',
+    });
+
+    const user = await User.findOne({ email: 'alice@example.com' });
+    expect(user).not.toBeNull();
+    expect(user.emailVerified).toBe(false);
+  });
+
+  it('stores a hashed email verification token with a future expiry', async () => {
+    await request(app).post('/api/users/register').send({
+      name: 'Alice',
+      email: 'alice@example.com',
+      password: 'password123',
+    });
+
+    const user = await User.findOne({ email: 'alice@example.com' });
+    expect(user.emailVerificationToken).toBeDefined();
+    expect(user.emailVerificationExpires.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('does not store the plaintext token (stores a SHA-256 hash)', async () => {
+    await request(app).post('/api/users/register').send({
+      name: 'Alice',
+      email: 'alice@example.com',
+      password: 'password123',
+    });
+
+    const user = await User.findOne({ email: 'alice@example.com' });
+    // The stored token should be a 64-char hex SHA-256 hash, not a raw random value
+    expect(user.emailVerificationToken).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('creates a farm account with farm profile fields', async () => {
@@ -36,8 +99,11 @@ describe('POST /api/users/register', () => {
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.user.role).toBe('farm');
-    expect(res.body.user.farmName).toBe('Sunny Acres');
+    expect(res.body.requiresVerification).toBe(true);
+
+    const user = await User.findOne({ email: 'bob@farm.com' });
+    expect(user.role).toBe('farm');
+    expect(user.farmName).toBe('Sunny Acres');
   });
 
   it('returns 422 when farm name is missing for a farm registration', async () => {
@@ -76,17 +142,95 @@ describe('POST /api/users/register', () => {
       role: 'admin',
     });
 
-    expect(res.status).toBe(422); // 'admin' not in allowed roles ['customer', 'farm']
+    expect(res.status).toBe(422);
   });
 });
 
-describe('POST /api/users/login', () => {
+// ── GET /api/users/verify-email/:token ────────────────────────────────────────
+
+describe('GET /api/users/verify-email/:token', () => {
+  const RAW_TOKEN = 'c'.repeat(64);
+  const HASHED_TOKEN = crypto.createHash('sha256').update(RAW_TOKEN).digest('hex');
+  let userId;
+
   beforeEach(async () => {
-    await request(app).post('/api/users/register').send({
+    const user = await User.create({
       name: 'Alice',
       email: 'alice@example.com',
       password: 'password123',
+      emailVerified: false,
+      emailVerificationToken: HASHED_TOKEN,
+      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
+    userId = user.id;
+  });
+
+  it('returns 200 and a success message for a valid token', async () => {
+    const res = await request(app).get(`/api/users/verify-email/${RAW_TOKEN}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toMatch(/verified/i);
+  });
+
+  it('sets emailVerified to true and clears token fields', async () => {
+    await request(app).get(`/api/users/verify-email/${RAW_TOKEN}`);
+
+    const user = await User.findById(userId);
+    expect(user.emailVerified).toBe(true);
+    expect(user.emailVerificationToken).toBeUndefined();
+    expect(user.emailVerificationExpires).toBeUndefined();
+  });
+
+  it('allows the user to log in after email verification', async () => {
+    await request(app).get(`/api/users/verify-email/${RAW_TOKEN}`);
+
+    const login = await request(app)
+      .post('/api/users/login')
+      .send({ email: 'alice@example.com', password: 'password123' });
+
+    expect(login.status).toBe(200);
+    expect(login.headers['set-cookie']).toBeDefined();
+    expect(login.body.user.email).toBe('alice@example.com');
+  });
+
+  it('returns 400 for an expired token', async () => {
+    await User.findByIdAndUpdate(userId, {
+      emailVerificationExpires: new Date(Date.now() - 1000),
+    });
+
+    const res = await request(app).get(`/api/users/verify-email/${RAW_TOKEN}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/invalid or has expired/i);
+  });
+
+  it('returns 400 for an unknown token', async () => {
+    const unknownToken = 'd'.repeat(64);
+    const res = await request(app).get(`/api/users/verify-email/${unknownToken}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/invalid or has expired/i);
+  });
+
+  it('returns 422 for a malformed (non-hex) token', async () => {
+    const res = await request(app).get('/api/users/verify-email/not-a-valid-token');
+
+    expect(res.status).toBe(422);
+  });
+
+  it('returns 400 when the token is used a second time', async () => {
+    await request(app).get(`/api/users/verify-email/${RAW_TOKEN}`);
+    const res = await request(app).get(`/api/users/verify-email/${RAW_TOKEN}`);
+
+    expect(res.status).toBe(400);
+  });
+});
+
+// ── POST /api/users/login ─────────────────────────────────────────────────────
+
+describe('POST /api/users/login — verified user', () => {
+  beforeEach(async () => {
+    await createVerifiedUser();
   });
 
   it('sets an auth cookie on valid credentials', async () => {
@@ -120,8 +264,56 @@ describe('POST /api/users/login', () => {
   });
 });
 
+describe('POST /api/users/login — unverified user', () => {
+  beforeEach(async () => {
+    await request(app).post('/api/users/register').send({
+      name: 'Alice',
+      email: 'alice@example.com',
+      password: 'password123',
+    });
+  });
+
+  it('returns requiresVerification: true and no cookie', async () => {
+    const res = await request(app).post('/api/users/login').send({
+      email: 'alice@example.com',
+      password: 'password123',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.requiresVerification).toBe(true);
+    expect(res.body.user).toBeUndefined();
+    expect(res.headers['set-cookie']).toBeUndefined();
+  });
+
+  it('refreshes the email verification token on each unverified login attempt', async () => {
+    const before = await User.findOne({ email: 'alice@example.com' });
+    const tokenBefore = before.emailVerificationToken;
+
+    await request(app).post('/api/users/login').send({
+      email: 'alice@example.com',
+      password: 'password123',
+    });
+
+    const after = await User.findOne({ email: 'alice@example.com' });
+    expect(after.emailVerificationToken).toBeDefined();
+    expect(after.emailVerificationToken).not.toBe(tokenBefore);
+  });
+
+  it('still returns 401 for wrong password even when unverified', async () => {
+    const res = await request(app).post('/api/users/login').send({
+      email: 'alice@example.com',
+      password: 'wrongpassword',
+    });
+
+    expect(res.status).toBe(401);
+  });
+});
+
+// ── POST /api/users/forgot-password ──────────────────────────────────────────
+
 describe('POST /api/users/forgot-password', () => {
   beforeEach(async () => {
+    // Unverified user is fine here — forgot-password does not check emailVerified
     await request(app).post('/api/users/register').send({
       name: 'Alice',
       email: 'alice@example.com',
@@ -167,19 +359,17 @@ describe('POST /api/users/forgot-password', () => {
   });
 });
 
+// ── POST /api/users/reset-password/:token ────────────────────────────────────
+
 describe('POST /api/users/reset-password/:token', () => {
   let userId;
-  const RAW_TOKEN = 'a'.repeat(64); // 64 hex chars = 32 bytes
+  const RAW_TOKEN = 'a'.repeat(64);
 
   beforeEach(async () => {
-    const reg = await request(app).post('/api/users/register').send({
-      name: 'Alice',
-      email: 'alice@example.com',
-      password: 'password123',
-    });
-    userId = reg.body.user.id;
+    // Create a pre-verified user so login works after password reset
+    const user = await createVerifiedUser();
+    userId = user.id;
 
-    // Directly write a known hashed token into the DB
     const hashedToken = crypto.createHash('sha256').update(RAW_TOKEN).digest('hex');
     await User.findByIdAndUpdate(userId, {
       resetPasswordToken: hashedToken,
@@ -242,7 +432,6 @@ describe('POST /api/users/reset-password/:token', () => {
   });
 
   it('returns 400 for an expired token', async () => {
-    // Back-date the expiry
     await User.findByIdAndUpdate(userId, {
       resetPasswordExpires: new Date(Date.now() - 1000),
     });
@@ -272,15 +461,11 @@ describe('POST /api/users/reset-password/:token', () => {
   });
 });
 
-describe('PATCH /api/users/me', () => {
-  async function registerAndGetCookies(overrides = {}) {
-    const defaults = { name: 'Alice', email: 'alice@example.com', password: 'password123' };
-    const res = await request(app).post('/api/users/register').send({ ...defaults, ...overrides });
-    return res.headers['set-cookie'];
-  }
+// ── PATCH /api/users/me ───────────────────────────────────────────────────────
 
+describe('PATCH /api/users/me', () => {
   it('allows a farm to update farmName, farmDescription, and farmLocation', async () => {
-    const cookies = await registerAndGetCookies({
+    const cookies = await createVerifiedUserAndGetCookies({
       role: 'farm',
       farmName: 'Old Farm',
       farmLocation: 'Devon',
@@ -305,7 +490,7 @@ describe('PATCH /api/users/me', () => {
   });
 
   it('allows a customer to update their name', async () => {
-    const cookies = await registerAndGetCookies();
+    const cookies = await createVerifiedUserAndGetCookies();
 
     const res = await request(app)
       .patch('/api/users/me')
@@ -317,7 +502,7 @@ describe('PATCH /api/users/me', () => {
   });
 
   it('silently ignores farm fields for a customer', async () => {
-    const cookies = await registerAndGetCookies();
+    const cookies = await createVerifiedUserAndGetCookies();
 
     const res = await request(app)
       .patch('/api/users/me')
@@ -329,7 +514,7 @@ describe('PATCH /api/users/me', () => {
   });
 
   it('returns 422 when name is set to an empty string', async () => {
-    const cookies = await registerAndGetCookies();
+    const cookies = await createVerifiedUserAndGetCookies();
 
     const res = await request(app)
       .patch('/api/users/me')
@@ -348,14 +533,11 @@ describe('PATCH /api/users/me', () => {
   });
 });
 
+// ── GET /api/users/me ─────────────────────────────────────────────────────────
+
 describe('GET /api/users/me', () => {
   it('returns the user profile for a valid cookie', async () => {
-    const reg = await request(app).post('/api/users/register').send({
-      name: 'Alice',
-      email: 'alice@example.com',
-      password: 'password123',
-    });
-    const cookies = reg.headers['set-cookie'];
+    const cookies = await createVerifiedUserAndGetCookies();
 
     const res = await request(app)
       .get('/api/users/me')

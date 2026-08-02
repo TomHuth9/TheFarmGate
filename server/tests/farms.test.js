@@ -1,5 +1,6 @@
 const request = require('supertest');
 const app = require('../app');
+const User = require('../models/User');
 const { connectTestDB, disconnectTestDB, clearDB } = require('./helpers/db');
 
 beforeAll(connectTestDB);
@@ -7,7 +8,7 @@ afterAll(disconnectTestDB);
 afterEach(clearDB);
 
 async function createFarm(overrides = {}) {
-  const res = await request(app).post('/api/users/register').send({
+  const defaults = {
     name: 'Farm Owner',
     email: `farm_${Date.now()}@example.com`,
     password: 'password123',
@@ -15,9 +16,11 @@ async function createFarm(overrides = {}) {
     farmName: 'Green Acres',
     farmDescription: 'A family farm in the hills.',
     farmLocation: 'Herefordshire, UK',
-    ...overrides,
-  });
-  return { cookies: res.headers['set-cookie'], id: res.body.user.id };
+  };
+  const merged = { ...defaults, ...overrides };
+  const user = await User.create({ ...merged, emailVerified: true });
+  const loginRes = await request(app).post('/api/users/login').send({ email: merged.email, password: merged.password });
+  return { cookies: loginRes.headers['set-cookie'], id: user.id };
 }
 
 describe('GET /api/farms', () => {
@@ -76,14 +79,14 @@ describe('GET /api/farms/:id', () => {
   });
 
   it('returns 404 when the id belongs to a customer, not a farm', async () => {
-    const res = await request(app).post('/api/users/register').send({
+    const customer = await User.create({
       name: 'Customer',
       email: 'customer@example.com',
       password: 'password123',
+      emailVerified: true,
     });
-    const customerId = res.body.user.id;
 
-    const check = await request(app).get(`/api/farms/${customerId}`);
+    const check = await request(app).get(`/api/farms/${customer.id}`);
     expect(check.status).toBe(404);
   });
 });

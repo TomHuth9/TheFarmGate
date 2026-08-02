@@ -1,30 +1,28 @@
 const request = require('supertest');
 const app = require('../app');
+const User = require('../models/User');
 const { connectTestDB, disconnectTestDB, clearDB } = require('./helpers/db');
 
 beforeAll(connectTestDB);
 afterAll(disconnectTestDB);
 afterEach(clearDB);
 
-// Helper: register a user and return cookies + id
-async function registerUser(overrides = {}) {
+async function createUser(overrides = {}) {
   const defaults = {
     name: 'Test User',
     email: `user_${Date.now()}@example.com`,
     password: 'password123',
   };
-  const res = await request(app)
-    .post('/api/users/register')
-    .send({ ...defaults, ...overrides });
-  return { cookies: res.headers['set-cookie'], id: res.body.user.id };
+  const merged = { ...defaults, ...overrides };
+  const user = await User.create({ ...merged, emailVerified: true });
+  const loginRes = await request(app).post('/api/users/login').send({ email: merged.email, password: merged.password });
+  return { cookies: loginRes.headers['set-cookie'], id: user.id };
 }
 
-// Helper: register a farm account and return cookies + id
-async function registerFarm(overrides = {}) {
-  return registerUser({
+async function createFarm(overrides = {}) {
+  return createUser({
     name: 'Farm Owner',
     email: `farm_${Date.now()}@example.com`,
-    password: 'password123',
     role: 'farm',
     farmName: 'Test Farm',
     farmLocation: 'Yorkshire, UK',
@@ -40,7 +38,7 @@ describe('GET /api/products', () => {
   });
 
   it('filters by category', async () => {
-    const { cookies } = await registerFarm();
+    const { cookies } = await createFarm();
 
     await request(app)
       .post('/api/products')
@@ -59,8 +57,8 @@ describe('GET /api/products', () => {
   });
 
   it('filters by farm id', async () => {
-    const farm1 = await registerFarm({ email: 'farm1@example.com', farmName: 'Farm One' });
-    const farm2 = await registerFarm({ email: 'farm2@example.com', farmName: 'Farm Two' });
+    const farm1 = await createFarm({ email: 'farm1@example.com', farmName: 'Farm One' });
+    const farm2 = await createFarm({ email: 'farm2@example.com', farmName: 'Farm Two' });
 
     await request(app)
       .post('/api/products')
@@ -82,7 +80,7 @@ describe('GET /api/products', () => {
     let cookies;
 
     beforeEach(async () => {
-      ({ cookies } = await registerFarm());
+      ({ cookies } = await createFarm());
       await request(app).post('/api/products').set('Cookie', cookies)
         .send({ name: 'Organic Whole Milk', description: 'Rich creamy milk from grass-fed cows', price: 1.5, category: 'Dairy', unit: 'per litre' });
       await request(app).post('/api/products').set('Cookie', cookies)
@@ -134,7 +132,7 @@ describe('GET /api/products', () => {
 
 describe('GET /api/products/:id', () => {
   it('returns a single product with farm info populated', async () => {
-    const { cookies } = await registerFarm();
+    const { cookies } = await createFarm();
 
     const created = await request(app)
       .post('/api/products')
@@ -156,7 +154,7 @@ describe('GET /api/products/:id', () => {
 
 describe('POST /api/products', () => {
   it('allows a farm to create a product', async () => {
-    const { cookies } = await registerFarm();
+    const { cookies } = await createFarm();
 
     const res = await request(app)
       .post('/api/products')
@@ -169,7 +167,7 @@ describe('POST /api/products', () => {
   });
 
   it('returns 403 for a customer', async () => {
-    const { cookies } = await registerUser();
+    const { cookies } = await createUser();
 
     const res = await request(app)
       .post('/api/products')
@@ -190,7 +188,7 @@ describe('POST /api/products', () => {
 
 describe('PUT /api/products/:id', () => {
   it('allows a farm to edit its own product', async () => {
-    const { cookies } = await registerFarm();
+    const { cookies } = await createFarm();
 
     const created = await request(app)
       .post('/api/products')
@@ -207,8 +205,8 @@ describe('PUT /api/products/:id', () => {
   });
 
   it("returns 403 when a farm tries to edit another farm's product", async () => {
-    const farm1 = await registerFarm({ email: 'f1@example.com', farmName: 'Farm 1' });
-    const farm2 = await registerFarm({ email: 'f2@example.com', farmName: 'Farm 2' });
+    const farm1 = await createFarm({ email: 'f1@example.com', farmName: 'Farm 1' });
+    const farm2 = await createFarm({ email: 'f2@example.com', farmName: 'Farm 2' });
 
     const created = await request(app)
       .post('/api/products')
@@ -226,7 +224,7 @@ describe('PUT /api/products/:id', () => {
 
 describe('DELETE /api/products/:id', () => {
   it('allows a farm to delete its own product', async () => {
-    const { cookies } = await registerFarm();
+    const { cookies } = await createFarm();
 
     const created = await request(app)
       .post('/api/products')
@@ -245,8 +243,8 @@ describe('DELETE /api/products/:id', () => {
   });
 
   it("returns 403 when a farm tries to delete another farm's product", async () => {
-    const farm1 = await registerFarm({ email: 'f1@example.com', farmName: 'Farm 1' });
-    const farm2 = await registerFarm({ email: 'f2@example.com', farmName: 'Farm 2' });
+    const farm1 = await createFarm({ email: 'f1@example.com', farmName: 'Farm 1' });
+    const farm2 = await createFarm({ email: 'f2@example.com', farmName: 'Farm 2' });
 
     const created = await request(app)
       .post('/api/products')

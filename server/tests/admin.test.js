@@ -1,54 +1,35 @@
 const request = require('supertest');
 const app = require('../app');
+const User = require('../models/User');
 const { connectTestDB, disconnectTestDB, clearDB } = require('./helpers/db');
 
 beforeAll(connectTestDB);
 afterAll(disconnectTestDB);
 afterEach(clearDB);
 
-async function registerUser(overrides = {}) {
+async function createUser(overrides = {}) {
   const defaults = {
     name: 'Test User',
     email: `user_${Date.now()}@example.com`,
     password: 'password123',
   };
-  const res = await request(app)
-    .post('/api/users/register')
-    .send({ ...defaults, ...overrides });
-  return { cookies: res.headers['set-cookie'], id: res.body.user.id };
+  const merged = { ...defaults, ...overrides };
+  const user = await User.create({ ...merged, emailVerified: true });
+  const loginRes = await request(app).post('/api/users/login').send({ email: merged.email, password: merged.password });
+  return { cookies: loginRes.headers['set-cookie'], id: user.id };
 }
 
 // Admin accounts cannot be created via the public register endpoint,
-// so we create a customer then promote them directly in the DB.
-async function registerAdmin(overrides = {}) {
-  const User = require('../models/User');
-  const { cookies, id } = await registerUser({ email: `admin_${Date.now()}@example.com`, ...overrides });
-  await User.findByIdAndUpdate(id, { role: 'admin' });
-  // Re-login to get a cookie that carries the admin role in its JWT
-  const loginRes = await request(app)
-    .post('/api/users/login')
-    .send({ email: overrides.email ?? `admin_${Date.now()}@example.com`, password: overrides.password ?? 'password123' });
-  // The re-login email won't match because registerUser uses Date.now() in the default.
-  // Return the id and original cookies; route handler re-reads role from DB via `protect`.
-  return { cookies, id };
-}
-
-// Simpler helper: create a user, patch the role directly, then log in fresh to get a valid cookie.
+// so we insert directly into the DB and promote the role before login.
 async function createAdmin(email = `admin_${Date.now()}@example.com`) {
-  const User = require('../models/User');
-  const regRes = await request(app)
-    .post('/api/users/register')
-    .send({ name: 'Admin', email, password: 'password123' });
-  const id = regRes.body.user.id;
-  await User.findByIdAndUpdate(id, { role: 'admin' });
-  const loginRes = await request(app)
-    .post('/api/users/login')
-    .send({ email, password: 'password123' });
-  return { cookies: loginRes.headers['set-cookie'], id };
+  const user = await User.create({ name: 'Admin', email, password: 'password123', emailVerified: true });
+  await User.findByIdAndUpdate(user.id, { role: 'admin' });
+  const loginRes = await request(app).post('/api/users/login').send({ email, password: 'password123' });
+  return { cookies: loginRes.headers['set-cookie'], id: user.id };
 }
 
-async function registerFarm(overrides = {}) {
-  return registerUser({
+async function createFarm(overrides = {}) {
+  return createUser({
     name: 'Farm Owner',
     email: `farm_${Date.now()}@example.com`,
     role: 'farm',
@@ -63,8 +44,8 @@ async function registerFarm(overrides = {}) {
 describe('GET /api/users', () => {
   it('returns all users for an admin', async () => {
     const admin = await createAdmin();
-    await registerUser({ email: 'customer@example.com' });
-    await registerFarm({ email: 'farm@example.com' });
+    await createUser({ email: 'customer@example.com' });
+    await createFarm({ email: 'farm@example.com' });
 
     const res = await request(app)
       .get('/api/users')
@@ -87,13 +68,13 @@ describe('GET /api/users', () => {
   });
 
   it('returns 403 for a customer', async () => {
-    const { cookies } = await registerUser();
+    const { cookies } = await createUser();
     const res = await request(app).get('/api/users').set('Cookie', cookies);
     expect(res.status).toBe(403);
   });
 
   it('returns 403 for a farm user', async () => {
-    const { cookies } = await registerFarm();
+    const { cookies } = await createFarm();
     const res = await request(app).get('/api/users').set('Cookie', cookies);
     expect(res.status).toBe(403);
   });
@@ -109,7 +90,7 @@ describe('GET /api/users', () => {
 describe('PATCH /api/users/:id/role', () => {
   it('allows an admin to change a user\'s role', async () => {
     const admin = await createAdmin();
-    const { id } = await registerUser({ email: 'target@example.com' });
+    const { id } = await createUser({ email: 'target@example.com' });
 
     const res = await request(app)
       .patch(`/api/users/${id}/role`)
@@ -133,7 +114,7 @@ describe('PATCH /api/users/:id/role', () => {
 
   it('returns 422 for an invalid role value', async () => {
     const admin = await createAdmin();
-    const { id } = await registerUser({ email: 'target2@example.com' });
+    const { id } = await createUser({ email: 'target2@example.com' });
 
     const res = await request(app)
       .patch(`/api/users/${id}/role`)
@@ -155,8 +136,8 @@ describe('PATCH /api/users/:id/role', () => {
   });
 
   it('returns 403 for a non-admin user', async () => {
-    const { cookies } = await registerUser({ email: 'other@example.com' });
-    const { id } = await registerUser({ email: 'target3@example.com' });
+    const { cookies } = await createUser({ email: 'other@example.com' });
+    const { id } = await createUser({ email: 'target3@example.com' });
 
     const res = await request(app)
       .patch(`/api/users/${id}/role`)
@@ -179,7 +160,7 @@ describe('PATCH /api/users/:id/role', () => {
 describe('DELETE /api/users/:id', () => {
   it('allows an admin to delete another user', async () => {
     const admin = await createAdmin();
-    const { id } = await registerUser({ email: 'todelete@example.com' });
+    const { id } = await createUser({ email: 'todelete@example.com' });
 
     const res = await request(app)
       .delete(`/api/users/${id}`)
@@ -213,8 +194,8 @@ describe('DELETE /api/users/:id', () => {
   });
 
   it('returns 403 for a non-admin user', async () => {
-    const { cookies } = await registerUser({ email: 'attacker@example.com' });
-    const { id } = await registerUser({ email: 'victim@example.com' });
+    const { cookies } = await createUser({ email: 'attacker@example.com' });
+    const { id } = await createUser({ email: 'victim@example.com' });
 
     const res = await request(app)
       .delete(`/api/users/${id}`)
