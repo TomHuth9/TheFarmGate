@@ -1,0 +1,67 @@
+<div class="profile-page section-pad">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">My Profile</h1>
+      <p class="subtitle">Update your name and delivery postcode</p>
+    </div>
+
+    @if (loading()) {
+      <div class="spinner-wrap">
+        <mat-spinner diameter="48"></mat-spinner>
+      </div>
+    } @else {
+      <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Full name</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput formControlName="name" autocomplete="name" />
+          @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+            <mat-error>Name is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email address</mat-label>
+          <mat-icon matPrefix>email</mat-icon>
+          <input matInput formControlName="email" autocomplete="email" />
+          <mat-hint>Email cannot be changed</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Postcode</mat-label>
+          <mat-icon matPrefix>location_on</mat-icon>
+          <input matInput formControlName="postcode" autocomplete="postal-code" placeholder="e.g. SW1A 1AA" />
+          @if (form.get('postcode')?.hasError('pattern') && form.get('postcode')?.touched) {
+            <mat-error>Postcode contains invalid characters</mat-error>
+          }
+          <mat-hint>Used to match you with nearby farms</mat-hint>
+        </mat-form-field>
+
+        @if (saved()) {
+          <div class="success-msg">
+            <mat-icon>check_circle</mat-icon> Profile saved successfully
+          </div>
+        }
+
+        @if (error()) {
+          <div class="error-msg">
+            <mat-icon>error</mat-icon> {{ error() }}
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="submit" mat-raised-button color="primary"
+            [disabled]="form.invalid || saving()">
+            @if (saving()) {
+              <mat-spinner diameter="18"></mat-spinner>
+            } @else {
+              <mat-icon>save</mat-icon> Save Changes
+            }
+          </button>
+        </div>
+
+      </form>
+    }
+  </div>
+</div>

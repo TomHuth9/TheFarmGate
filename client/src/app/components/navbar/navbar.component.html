@@ -55,6 +55,12 @@
         <mat-icon>receipt_long</mat-icon>
         <span>My Orders</span>
       </button>
+      @if (auth.currentUser()?.role === 'customer') {
+        <button type="button" mat-menu-item routerLink="/profile">
+          <mat-icon>manage_accounts</mat-icon>
+          <span>My Profile</span>
+        </button>
+      }
       <button type="button" mat-menu-item (click)="auth.logout()">
         <mat-icon>logout</mat-icon>
         <span>Sign out</span>

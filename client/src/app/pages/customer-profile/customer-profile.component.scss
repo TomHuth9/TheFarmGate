@@ -1,0 +1,59 @@
+.profile-page {
+  min-height: 60vh;
+
+  .page-header {
+    margin-bottom: 32px;
+  }
+
+  .page-title {
+    font-family: 'Georgia', serif;
+    color: var(--color-green-dark);
+    font-size: 2rem;
+    margin: 0 0 4px;
+  }
+
+  .subtitle {
+    color: #666;
+    margin: 0;
+  }
+
+  .spinner-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 64px 0;
+  }
+
+  .profile-form {
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    mat-form-field { width: 100%; }
+  }
+
+  .success-msg, .error-msg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-top: 4px;
+
+    mat-icon { font-size: 1.1rem; height: 1.1rem; width: 1.1rem; flex-shrink: 0; }
+  }
+
+  .success-msg { background: #d1e7dd; color: #0a3622; }
+  .error-msg   { background: #f8d7da; color: #58151c; }
+
+  .form-actions {
+    margin-top: 8px;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+}

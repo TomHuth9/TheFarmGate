@@ -14,6 +14,7 @@ import { ResetPasswordComponent } from './pages/reset-password/reset-password.co
 import { MyOrdersComponent } from './pages/my-orders/my-orders.component';
 import { FarmsComponent } from './pages/farms/farms.component';
 import { VerifyEmailComponent } from './pages/verify-email/verify-email.component';
+import { CustomerProfileComponent } from './pages/customer-profile/customer-profile.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -33,5 +34,6 @@ export const routes: Routes = [
   { path: 'farms', component: FarmsComponent },
   { path: 'farms/:id', component: FarmProfileComponent },
   { path: 'my-orders', component: MyOrdersComponent },
+  { path: 'profile', component: CustomerProfileComponent },
   { path: '**', redirectTo: '' },
 ];
