@@ -1,45 +1,139 @@
-<div class="confirmation-page section-pad">
+<div class="detail-page section-pad">
   <div class="container">
-    @if (order(); as o) {
-      <div class="confirmation-card">
-        <mat-icon class="tick-icon">check_circle</mat-icon>
-        <h1>Order Confirmed!</h1>
-        <p class="sub">Thank you for your order. We'll have it with you shortly.</p>
 
+    <a class="back-link" routerLink="/my-orders">
+      <mat-icon>arrow_back</mat-icon> My Orders
+    </a>
+
+    @if (loading()) {
+      <div class="spinner-wrap"><mat-spinner diameter="48"></mat-spinner></div>
+    } @else {
+      @if (order(); as o) {
+
+        <!-- ── Header ───────────────────────────────────────── -->
+        @if (o.status === 'cancelled') {
+          <div class="order-hero cancelled">
+            <mat-icon>cancel</mat-icon>
+            <h1>Order Cancelled</h1>
+            <p>This order has been cancelled.</p>
+          </div>
+        } @else if (o.status === 'delivered') {
+          <div class="order-hero delivered">
+            <mat-icon>check_circle</mat-icon>
+            <h1>Order Delivered</h1>
+            <p>Your order has been delivered. Enjoy!</p>
+          </div>
+        } @else if (o.status === 'dispatched') {
+          <div class="order-hero dispatched">
+            <mat-icon>local_shipping</mat-icon>
+            <h1>On Its Way!</h1>
+            <p>Your order has been dispatched and is on its way to you.</p>
+          </div>
+        } @else if (o.status === 'confirmed') {
+          <div class="order-hero confirmed">
+            <mat-icon>thumb_up</mat-icon>
+            <h1>Order Confirmed</h1>
+            <p>The farm has confirmed your order and is preparing it for dispatch.</p>
+          </div>
+        } @else {
+          <div class="order-hero pending">
+            <mat-icon>check_circle</mat-icon>
+            <h1>Order Placed!</h1>
+            <p>Thank you for your order. The farm will confirm it shortly.</p>
+          </div>
+        }
+
+        <!-- ── Status tracker ─────────────────────────────── -->
+        @if (o.status !== 'cancelled') {
+          <div class="stepper">
+            @for (step of steps; track step.key; let i = $index) {
+              <div class="step"
+                [class.step--done]="i < stepIndex(o.status)"
+                [class.step--active]="i === stepIndex(o.status)">
+                <div class="step__circle">
+                  <mat-icon>{{ i <= stepIndex(o.status) ? step.icon : 'radio_button_unchecked' }}</mat-icon>
+                </div>
+                <span class="step__label">{{ step.label }}</span>
+              </div>
+              @if (i < steps.length - 1) {
+                <div class="step__line" [class.step__line--done]="i < stepIndex(o.status)"></div>
+              }
+            }
+          </div>
+        }
+
+        <!-- ── Order meta ─────────────────────────────────── -->
         <div class="order-meta">
           <div class="meta-item">
             <span class="label">Order ID</span>
-            <span class="value">{{ o._id | slice:0:8 }}…</span>
+            <span class="value mono">{{ o._id | slice:0:8 }}…</span>
           </div>
           <div class="meta-item">
             <span class="label">Placed</span>
-            <span class="value">{{ o.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
+            <span class="value">{{ o.createdAt | date:'d MMM yyyy, HH:mm' }}</span>
           </div>
           <div class="meta-item">
             <span class="label">Status</span>
-            <span class="value status">{{ o.status | titlecase }}</span>
+            <span class="value" [class]="'status-' + o.status">{{ o.status | titlecase }}</span>
           </div>
           <div class="meta-item">
             <span class="label">Total</span>
-            <span class="value">{{ o.total | currency:'GBP' }}</span>
+            <span class="value total">{{ o.total | currency:'GBP' }}</span>
           </div>
         </div>
 
-        <div class="items-list">
-          <h2>Items</h2>
-          @for (item of o.items; track item.product) {
-            <div class="item-row">
-              <span>{{ item.name }} × {{ item.quantity }}</span>
-              <span>{{ (item.price * item.quantity) | currency:'GBP' }}</span>
+        <!-- ── Items ─────────────────────────────────────── -->
+        <div class="section-block">
+          <h2 class="section-title">Items</h2>
+          <div class="items-list">
+            @for (item of o.items; track item.product) {
+              <div class="item-row">
+                <span class="item-name">{{ item.name }} <span class="qty">× {{ item.quantity }}</span></span>
+                <span class="item-price">{{ (item.price * item.quantity) | currency:'GBP' }}</span>
+              </div>
+            }
+            <div class="item-row total-row">
+              <span class="item-name">Total</span>
+              <span class="item-price">{{ o.total | currency:'GBP' }}</span>
             </div>
-          }
+          </div>
         </div>
 
+        <!-- ── Delivery address ───────────────────────────── -->
+        @if (o.deliveryAddress) {
+          <div class="section-block">
+            <h2 class="section-title">Delivery Address</h2>
+            <address class="delivery-address">
+              {{ o.deliveryAddress.line1 }}<br>
+              @if (o.deliveryAddress.line2) { {{ o.deliveryAddress.line2 }}<br> }
+              {{ o.deliveryAddress.city }}<br>
+              {{ o.deliveryAddress.postcode }}
+            </address>
+          </div>
+        }
+
+        <!-- ── Actions ───────────────────────────────────── -->
         <div class="actions">
-          <a mat-raised-button color="primary" routerLink="/browse">Continue Shopping</a>
-          <a mat-stroked-button routerLink="/">Back to Home</a>
+          @if (o.status === 'pending') {
+            <button type="button" mat-stroked-button color="warn"
+              [disabled]="cancelling()"
+              (click)="cancelOrder()">
+              @if (cancelling()) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                <mat-icon>cancel</mat-icon> Cancel Order
+              }
+            </button>
+          }
+          <a mat-stroked-button routerLink="/my-orders">
+            <mat-icon>receipt_long</mat-icon> My Orders
+          </a>
+          <a mat-raised-button color="primary" routerLink="/browse">
+            Continue Shopping
+          </a>
         </div>
-      </div>
+
+      }
     }
   </div>
 </div>

@@ -50,6 +50,17 @@
                   <span class="total-value">{{ order.total | currency:'GBP' }}</span>
                 </div>
 
+                @if (order.deliveryAddress) {
+                  <div class="delivery-address">
+                    <span class="delivery-label">
+                      <mat-icon>place</mat-icon> Delivery
+                    </span>
+                    <span class="delivery-text">
+                      {{ order.deliveryAddress.line1 }}, {{ order.deliveryAddress.city }}, {{ order.deliveryAddress.postcode }}
+                    </span>
+                  </div>
+                }
+
                 <div class="card-actions">
                   <a mat-stroked-button [routerLink]="['/order-confirmation', order._id]">
                     <mat-icon>open_in_new</mat-icon> View Details
