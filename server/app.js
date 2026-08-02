@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -15,7 +16,24 @@ const farmRoutes = require('./routes/farms');
 const app = express();
 
 // --- Security headers (XSS, clickjacking, MIME sniffing, HSTS, etc.)
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:     ["'self'"],
+      baseUri:        ["'self'"],
+      fontSrc:        ["'self'", 'https:', 'data:'],
+      formAction:     ["'self'"],
+      frameAncestors: ["'self'"],
+      imgSrc:         ["'self'", 'data:', 'https://res.cloudinary.com'],
+      objectSrc:      ["'none'"],
+      scriptSrc:      ["'self'"],
+      scriptSrcAttr:  ["'none'"],
+      styleSrc:       ["'self'", 'https:', "'unsafe-inline'"],
+      connectSrc:     ["'self'", 'https://api.cloudinary.com'],
+      upgradeInsecureRequests: [],
+    },
+  },
+}));
 
 // --- CORS — origin from env so it works in production without code changes
 app.use(cors({
@@ -99,6 +117,16 @@ app.use('/api/farms', farmRoutes);
 
 // --- Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// --- Unmatched /api routes → 404 JSON (must come before the SPA fallback)
+app.use('/api/*', (req, res) => res.status(404).json({ message: 'Not found' }));
+
+// --- Serve Angular build in production
+if (process.env.NODE_ENV === 'production') {
+  const DIST = path.join(__dirname, '..', 'client', 'dist', 'client', 'browser');
+  app.use(express.static(DIST));
+  app.get('*', (req, res) => res.sendFile(path.join(DIST, 'index.html')));
+}
 
 // --- Global error handler — never leak stack traces or Mongoose internals
 app.use((err, req, res, _next) => {
