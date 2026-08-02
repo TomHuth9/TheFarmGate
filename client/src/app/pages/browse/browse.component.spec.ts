@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
+import { TestBed, fakeAsync, flush, tick, discardPeriodicTasks } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
@@ -309,6 +309,91 @@ describe('BrowseComponent', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('.product-farm')).toBeNull();
+    });
+  });
+
+  describe('autocomplete suggestions', () => {
+    it('returns an empty array when searchTerm is fewer than 2 characters', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct({ name: 'Whole Milk' })]);
+
+      component.searchControl.setValue('m');
+      expect(component.suggestions()).toHaveSize(0);
+    });
+
+    it('filters loaded products by searchTerm and returns matching names', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([
+        mockProduct({ _id: 'p1', name: 'Whole Milk' }),
+        mockProduct({ _id: 'p2', name: 'Skimmed Milk' }),
+        mockProduct({ _id: 'p3', name: 'Free Range Eggs' }),
+      ]);
+
+      component.searchControl.setValue('milk');
+
+      expect(component.suggestions()).toContain('Whole Milk');
+      expect(component.suggestions()).toContain('Skimmed Milk');
+      expect(component.suggestions()).not.toContain('Free Range Eggs');
+    });
+
+    it('is case-insensitive', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct({ name: 'Whole Milk' })]);
+
+      component.searchControl.setValue('MILK');
+      expect(component.suggestions()).toContain('Whole Milk');
+    });
+
+    it('caps suggestions at 6 results', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      const manyProducts = Array.from({ length: 10 }, (_, i) =>
+        mockProduct({ _id: `p${i}`, name: `Milk ${i}` })
+      );
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush(manyProducts);
+
+      component.searchControl.setValue('milk');
+      expect(component.suggestions().length).toBeLessThanOrEqual(6);
+    });
+
+    it('deduplicates identical product names', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([
+        mockProduct({ _id: 'p1', name: 'Whole Milk' }),
+        mockProduct({ _id: 'p2', name: 'Whole Milk' }),
+      ]);
+
+      component.searchControl.setValue('milk');
+      expect(component.suggestions().filter(s => s === 'Whole Milk').length).toBe(1);
+    });
+
+    it('updates searchTerm immediately on each keystroke without waiting for the debounce', fakeAsync(() => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([
+        mockProduct({ _id: 'p1', name: 'Whole Milk' }),
+      ]);
+
+      component.searchControl.setValue('mi');
+      // searchTerm must be set synchronously — do NOT tick first
+      expect(component.searchTerm()).toBe('mi');
+
+      tick(300);
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
+      flush();
+    }));
+
+    it('returns empty array when searchTerm is empty', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct({ name: 'Whole Milk' })]);
+
+      component.searchControl.setValue('');
+      expect(component.suggestions()).toHaveSize(0);
     });
   });
 

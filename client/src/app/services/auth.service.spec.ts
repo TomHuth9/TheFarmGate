@@ -141,6 +141,54 @@ describe('AuthService', () => {
     });
   });
 
+  describe('updateMe()', () => {
+    const ME_URL = `${environment.apiUrl}/users/me`;
+
+    beforeEach(() => {
+      service.login('alice@example.com', 'pass').subscribe();
+      httpMock.expectOne(`${environment.apiUrl}/users/login`).flush({
+        user: { id: '1', name: 'Alice', email: 'alice@example.com', role: 'customer' },
+      });
+    });
+
+    it('sends a PATCH to /api/users/me with name and postcode', () => {
+      service.updateMe({ name: 'Alice Updated', postcode: 'SW1A 1AA' }).subscribe();
+
+      const req = httpMock.expectOne((r) => r.method === 'PATCH' && r.url === ME_URL);
+      expect(req.request.body).toEqual({ name: 'Alice Updated', postcode: 'SW1A 1AA' });
+      req.flush({ _id: '1', name: 'Alice Updated', email: 'alice@example.com', role: 'customer', postcode: 'SW1A 1AA' });
+    });
+
+    it('updates currentUser signal name on success', () => {
+      service.updateMe({ name: 'Alice New' }).subscribe();
+      httpMock.expectOne((r) => r.method === 'PATCH' && r.url === ME_URL).flush({
+        _id: '1', name: 'Alice New', email: 'alice@example.com', role: 'customer',
+      });
+
+      expect(service.currentUser()?.name).toBe('Alice New');
+    });
+
+    it('persists the updated name to localStorage', () => {
+      service.updateMe({ name: 'Alice New' }).subscribe();
+      httpMock.expectOne((r) => r.method === 'PATCH' && r.url === ME_URL).flush({
+        _id: '1', name: 'Alice New', email: 'alice@example.com', role: 'customer',
+      });
+
+      const stored = JSON.parse(localStorage.getItem('tfg_user')!);
+      expect(stored.name).toBe('Alice New');
+    });
+
+    it('does not alter other currentUser fields when updating name', () => {
+      service.updateMe({ name: 'Alice New' }).subscribe();
+      httpMock.expectOne((r) => r.method === 'PATCH' && r.url === ME_URL).flush({
+        _id: '1', name: 'Alice New', email: 'alice@example.com', role: 'customer',
+      });
+
+      expect(service.currentUser()?.email).toBe('alice@example.com');
+      expect(service.currentUser()?.role).toBe('customer');
+    });
+  });
+
   describe('persistence', () => {
     it('restores currentUser from localStorage without any HTTP request', () => {
       // Re-initialise the service after putting a user in localStorage

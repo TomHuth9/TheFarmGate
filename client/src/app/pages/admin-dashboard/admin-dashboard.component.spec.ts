@@ -241,4 +241,67 @@ describe('AdminDashboardComponent', () => {
       httpMock.expectNone(`${PRODUCTS_URL}/prod1`);
     });
   });
+
+  describe('toggleFeatured()', () => {
+    it('sends a PUT request toggling featured from false to true', () => {
+      const { fixture, component, httpMock } = setup(ADMIN_USER);
+      fixture.detectChanges();
+      flushInit(httpMock, [], [mockProduct({ featured: false })], []);
+
+      component.toggleFeatured(component.products()[0]);
+
+      const req = httpMock.expectOne(`${PRODUCTS_URL}/prod1`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body.featured).toBeTrue();
+      req.flush(mockProduct({ featured: true }));
+    });
+
+    it('sends a PUT request toggling featured from true to false', () => {
+      const { fixture, component, httpMock } = setup(ADMIN_USER);
+      fixture.detectChanges();
+      flushInit(httpMock, [], [mockProduct({ featured: true })], []);
+
+      component.toggleFeatured(component.products()[0]);
+
+      const req = httpMock.expectOne(`${PRODUCTS_URL}/prod1`);
+      expect(req.request.body.featured).toBeFalse();
+      req.flush(mockProduct({ featured: false }));
+    });
+
+    it('sets togglingFeaturedId while the request is in flight and clears it on success', () => {
+      const { fixture, component, httpMock } = setup(ADMIN_USER);
+      fixture.detectChanges();
+      flushInit(httpMock, [], [mockProduct()], []);
+
+      component.toggleFeatured(component.products()[0]);
+      expect(component.togglingFeaturedId()).toBe('prod1');
+
+      httpMock.expectOne(`${PRODUCTS_URL}/prod1`).flush(mockProduct({ featured: true }));
+      expect(component.togglingFeaturedId()).toBeNull();
+    });
+
+    it('updates the product featured flag in the list on success', () => {
+      const { fixture, component, httpMock } = setup(ADMIN_USER);
+      fixture.detectChanges();
+      flushInit(httpMock, [], [mockProduct({ featured: false })], []);
+
+      component.toggleFeatured(component.products()[0]);
+      httpMock.expectOne(`${PRODUCTS_URL}/prod1`).flush(mockProduct({ featured: true }));
+
+      expect(component.products()[0].featured).toBeTrue();
+    });
+
+    it('clears togglingFeaturedId without changing the product on error', () => {
+      const { fixture, component, httpMock } = setup(ADMIN_USER);
+      fixture.detectChanges();
+      flushInit(httpMock, [], [mockProduct({ featured: false })], []);
+
+      component.toggleFeatured(component.products()[0]);
+      httpMock.expectOne(`${PRODUCTS_URL}/prod1`)
+        .flush({ message: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
+
+      expect(component.togglingFeaturedId()).toBeNull();
+      expect(component.products()[0].featured).toBeFalse();
+    });
+  });
 });
