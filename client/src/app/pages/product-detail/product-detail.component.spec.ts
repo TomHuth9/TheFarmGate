@@ -5,13 +5,16 @@ import { provideRouter, ActivatedRoute } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ProductDetailComponent } from './product-detail.component';
 import { Product } from '../../models/product.model';
+import { Review, ReviewPage } from '../../models/review.model';
 import { BasketService } from '../../services/basket.service';
+import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
 
 const PRODUCT_ID = 'prod1';
 const FARM_ID = 'farm1';
 const PRODUCT_URL = `${environment.apiUrl}/products/${PRODUCT_ID}`;
 const PRODUCTS_API = `${environment.apiUrl}/products`;
+const REVIEWS_URL  = `${environment.apiUrl}/products/${PRODUCT_ID}/reviews`;
 
 const mockProduct = (overrides: Partial<Product> = {}): Product => ({
   _id: PRODUCT_ID,
@@ -341,6 +344,192 @@ describe('ProductDetailComponent', () => {
       const notice = fixture.nativeElement.querySelector('.basket-notice') as HTMLElement;
       expect(notice.textContent).toContain('1 item already');
       expect(notice.textContent).not.toContain('items');
+    });
+  });
+
+  // ── Reviews ───────────────────────────────────────────────────────────────────
+  describe('reviews', () => {
+    const CUSTOMER = { id: 'u1', name: 'Alice', email: 'alice@ex.com', role: 'customer' as const };
+
+    const emptyPage = (): ReviewPage => ({
+      reviews: [], total: 0, page: 1, pages: 0, avgRating: null, count: 0,
+    });
+
+    const oneReview = (): Review => ({
+      _id: 'r1',
+      product: PRODUCT_ID,
+      user: { _id: 'u1', name: 'Alice' },
+      rating: 4,
+      body: 'Really good milk.',
+      createdAt: new Date().toISOString(),
+    });
+
+    const filledPage = (): ReviewPage => ({
+      reviews: [oneReview()],
+      total: 1, page: 1, pages: 1, avgRating: 4, count: 1,
+    });
+
+    // Flush product (no farm) then reviews — the minimal setup for review tests
+    function flushNoFarm(httpMock: HttpTestingController, reviewPage: ReviewPage = emptyPage()) {
+      httpMock.expectOne(PRODUCT_URL).flush(mockProduct({ farm: null }));
+      httpMock.expectOne((r) => r.url === REVIEWS_URL).flush(reviewPage);
+    }
+
+    it('fires GET reviews after the product loads', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(PRODUCT_URL).flush(mockProduct({ farm: null }));
+
+      const req = httpMock.expectOne((r) => r.url === REVIEWS_URL && r.params.get('page') === '1');
+      expect(req.request.method).toBe('GET');
+      req.flush(emptyPage());
+    });
+
+    it('sets reviewPage signal after reviews load', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock, filledPage());
+
+      expect(component.reviewPage()?.count).toBe(1);
+      expect(component.reviewPage()?.avgRating).toBe(4);
+    });
+
+    it('renders review cards for each review in the page', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock, filledPage());
+      fixture.detectChanges();
+
+      const cards = fixture.nativeElement.querySelectorAll('.review-card');
+      expect(cards.length).toBe(1);
+      expect(cards[0].textContent).toContain('Really good milk.');
+      expect(cards[0].textContent).toContain('Alice');
+    });
+
+    it('shows the aggregate rating when count > 0', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock, filledPage());
+      fixture.detectChanges();
+
+      const aggregate = fixture.nativeElement.querySelector('.reviews-aggregate') as HTMLElement;
+      expect(aggregate).toBeTruthy();
+      expect(aggregate.textContent).toContain('4');
+    });
+
+    it('hides the write-review form for unauthenticated users', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.write-review')).toBeNull();
+    });
+
+    it('shows the write-review form for authenticated customers', () => {
+      const { fixture, httpMock } = setup();
+      TestBed.inject(AuthService).currentUser.set(CUSTOMER);
+      fixture.detectChanges();
+      flushNoFarm(httpMock);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.write-review')).toBeTruthy();
+    });
+
+    it('setRating() updates pendingRating and the form control', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock);
+
+      component.setRating(3);
+
+      expect(component.pendingRating()).toBe(3);
+      expect(component.reviewForm.value.rating).toBe(3);
+    });
+
+    it('submitReview() posts to the reviews endpoint', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock);
+
+      component.setRating(5);
+      component.reviewForm.patchValue({ body: 'Superb!' });
+      component.submitReview();
+
+      const req = httpMock.expectOne((r) => r.url === REVIEWS_URL);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(jasmine.objectContaining({ rating: 5, body: 'Superb!' }));
+      req.flush(oneReview());
+    });
+
+    it('submitReview() prepends the new review and updates the aggregate', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock, emptyPage());
+
+      component.setRating(5);
+      component.submitReview();
+
+      httpMock.expectOne((r) => r.url === REVIEWS_URL).flush(oneReview());
+
+      expect(component.reviewPage()?.count).toBe(1);
+      expect(component.reviewPage()?.reviews[0]._id).toBe('r1');
+    });
+
+    it('submitReview() sets reviewSuccess and hasReviewed to true on success', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock);
+
+      component.setRating(4);
+      component.submitReview();
+      httpMock.expectOne((r) => r.url === REVIEWS_URL).flush(oneReview());
+
+      expect(component.reviewSuccess()).toBeTrue();
+      expect(component.hasReviewed()).toBeTrue();
+    });
+
+    it('submitReview() sets reviewError on failure', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock);
+
+      component.setRating(4);
+      component.submitReview();
+      httpMock.expectOne((r) => r.url === REVIEWS_URL).flush(
+        { message: 'Server error' },
+        { status: 500, statusText: 'Internal Server Error' },
+      );
+
+      expect(component.reviewError()).toBe('Server error');
+      expect(component.submitting()).toBeFalse();
+    });
+
+    it('submitReview() sets hasReviewed on a 409 conflict response', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock);
+
+      component.setRating(4);
+      component.submitReview();
+      httpMock.expectOne((r) => r.url === REVIEWS_URL).flush(
+        { message: 'You have already reviewed this product.' },
+        { status: 409, statusText: 'Conflict' },
+      );
+
+      expect(component.hasReviewed()).toBeTrue();
+      expect(component.submitting()).toBeFalse();
+    });
+
+    it('submitReview() is blocked when rating is 0 (form invalid)', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      flushNoFarm(httpMock);
+
+      // rating stays 0 — form is invalid
+      component.submitReview();
+
+      httpMock.expectNone((r) => r.url === REVIEWS_URL);
     });
   });
 

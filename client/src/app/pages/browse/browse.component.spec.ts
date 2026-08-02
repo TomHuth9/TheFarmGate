@@ -228,4 +228,112 @@ describe('BrowseComponent', () => {
       flush();
     }));
   });
+
+  describe('sort', () => {
+    const p1 = mockProduct({ _id: 'p1', name: 'Cheese', price: 5.0 });
+    const p2 = mockProduct({ _id: 'p2', name: 'Apples', price: 2.0 });
+    const p3 = mockProduct({ _id: 'p3', name: 'Milk',   price: 1.5 });
+
+    it('displays products in the original server order by default', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([p1, p2, p3]);
+
+      expect(component.displayProducts().map(p => p._id)).toEqual(['p1', 'p2', 'p3']);
+    });
+
+    it('sorts by price ascending when price-asc is selected', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([p1, p2, p3]);
+
+      component.sort.set('price-asc');
+
+      expect(component.displayProducts().map(p => p._id)).toEqual(['p3', 'p2', 'p1']);
+    });
+
+    it('sorts by price descending when price-desc is selected', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([p1, p2, p3]);
+
+      component.sort.set('price-desc');
+
+      expect(component.displayProducts().map(p => p._id)).toEqual(['p1', 'p2', 'p3']);
+    });
+
+    it('sorts alphabetically by name when name-asc is selected', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([p1, p2, p3]);
+
+      component.sort.set('name-asc');
+
+      // Apples → Cheese → Milk
+      expect(component.displayProducts().map(p => p._id)).toEqual(['p2', 'p1', 'p3']);
+    });
+
+    it('resets sort to default when selectCategory() is called', () => {
+      const { fixture, component, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([p1]);
+
+      component.sort.set('price-asc');
+      component.selectCategory('All');
+
+      expect(component.sort()).toBe('default');
+    });
+  });
+
+  describe('farm name on product cards', () => {
+    const productWithFarm = (): Product => ({
+      ...mockProduct({ _id: 'pf1', name: 'Beef Mince' }),
+      farm: { _id: 'farm1', farmName: 'Oak Ridge Organics' },
+    });
+
+    it('renders the farm name as a link when the product has a farm', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([productWithFarm()]);
+      fixture.detectChanges();
+
+      const link: HTMLElement = fixture.nativeElement.querySelector('.product-farm');
+      expect(link).toBeTruthy();
+      expect(link.textContent).toContain('Oak Ridge Organics');
+    });
+
+    it('does not show the farm link when the product has no farm', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct()]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.product-farm')).toBeNull();
+    });
+  });
+
+  describe('result count', () => {
+    it('shows the count of displayed products', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([
+        mockProduct(),
+        mockProduct({ _id: 'p2', name: 'Eggs', description: 'Laid by hens', category: 'Eggs' }),
+      ]);
+      fixture.detectChanges();
+
+      const count: HTMLElement = fixture.nativeElement.querySelector('.result-count');
+      expect(count).toBeTruthy();
+      expect(count.textContent).toContain('2');
+    });
+
+    it('hides the result count when there are no products', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.result-count')).toBeNull();
+    });
+  });
 });

@@ -428,6 +428,106 @@ describe('FarmDashboardComponent', () => {
     });
   });
 
+  describe('lowStockProducts() computed', () => {
+    it('returns an empty array when all products are well-stocked', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 50 })] });
+
+      expect(component.lowStockProducts()).toHaveSize(0);
+    });
+
+    it('includes products with stock between 1 and 5 (inclusive)', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        products: [
+          mockProduct({ _id: 'p1', stock: 1 }),
+          mockProduct({ _id: 'p2', stock: 5 }),
+          mockProduct({ _id: 'p3', stock: 6 }),
+        ],
+      });
+
+      const ids = component.lowStockProducts().map((p) => p._id);
+      expect(ids).toContain('p1');
+      expect(ids).toContain('p2');
+      expect(ids).not.toContain('p3');
+    });
+
+    it('excludes out-of-stock products (stock === 0) from the low-stock list', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 0 })] });
+
+      expect(component.lowStockProducts()).toHaveSize(0);
+    });
+  });
+
+  describe('.low-stock-banner', () => {
+    it('is shown when at least one product has low stock', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 3 })] });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.low-stock-banner')).toBeTruthy();
+    });
+
+    it('is hidden when all products have adequate stock', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 20 })] });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.low-stock-banner')).toBeNull();
+    });
+
+    it('is hidden when all products are out of stock (stock === 0)', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 0 })] });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.low-stock-banner')).toBeNull();
+    });
+
+    it('is hidden when there are no products', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.low-stock-banner')).toBeNull();
+    });
+
+    it('lists each low-stock product name in the banner', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        products: [
+          mockProduct({ _id: 'p1', name: 'Aged Cheddar', stock: 2 }),
+          mockProduct({ _id: 'p2', name: 'Brie Wheel', stock: 4 }),
+        ],
+      });
+      fixture.detectChanges();
+
+      const banner: HTMLElement = fixture.nativeElement.querySelector('.low-stock-banner');
+      expect(banner.textContent).toContain('Aged Cheddar');
+      expect(banner.textContent).toContain('Brie Wheel');
+    });
+
+    it('shows the remaining quantity in the banner for each low-stock product', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, { products: [mockProduct({ stock: 2 })] });
+      fixture.detectChanges();
+
+      const qty: HTMLElement = fixture.nativeElement.querySelector('.low-stock-qty');
+      expect(qty).toBeTruthy();
+      expect(qty.textContent).toContain('2');
+    });
+  });
+
   describe('delete()', () => {
     it('does nothing when the confirmation is dismissed', () => {
       const { fixture, component, httpMock } = setup(FARM_USER);
