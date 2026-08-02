@@ -1,9 +1,7 @@
 .farms-page {
   min-height: 60vh;
 
-  .page-header {
-    margin-bottom: 40px;
-  }
+  .page-header { margin-bottom: 32px; }
 
   .page-title {
     font-family: 'Georgia', serif;
@@ -12,16 +10,77 @@
     margin: 0 0 4px;
   }
 
-  .subtitle {
-    color: #666;
-    margin: 0;
+  .subtitle { color: #666; margin: 0; }
+
+  // ── Postcode search ────────────────────────────────────────
+  .postcode-search {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    @media (max-width: 600px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 
-  .spinner-wrap {
-    display: flex;
-    justify-content: center;
-    padding: 64px 0;
+  .postcode-field {
+    flex: 1;
+    max-width: 420px;
+
+    @media (max-width: 600px) { max-width: none; }
   }
+
+  .search-btn {
+    height: 56px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-spinner {
+    display: inline-block;
+
+    ::ng-deep circle { stroke: #fff; }
+  }
+
+  .location-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #c62828;
+    font-size: 0.9rem;
+    margin: 0 0 16px;
+
+    mat-icon { font-size: 1.1rem; height: 1.1rem; width: 1.1rem; }
+  }
+
+  .location-active {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0faf2;
+    border: 1px solid #c8e6c9;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    color: var(--color-green-dark);
+    margin-bottom: 24px;
+
+    mat-icon { color: var(--color-green-mid); font-size: 1.2rem; height: 1.2rem; width: 1.2rem; }
+    strong { font-weight: 600; }
+  }
+
+  .clear-btn {
+    margin-left: auto;
+    color: #888;
+    font-size: 0.8rem;
+  }
+
+  // ── Farm grid ──────────────────────────────────────────────
+  .spinner-wrap { display: flex; justify-content: center; padding: 64px 0; }
 
   .empty-state {
     display: flex;
@@ -31,12 +90,7 @@
     padding: 80px 0;
     color: #999;
 
-    mat-icon {
-      font-size: 3rem;
-      height: 3rem;
-      width: 3rem;
-    }
-
+    mat-icon { font-size: 3rem; height: 3rem; width: 3rem; }
     p { margin: 0; font-size: 1.05rem; }
   }
 
@@ -58,16 +112,38 @@
     &:hover { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); }
   }
 
-  .farm-card-body {
-    padding: 24px 24px 16px;
-    flex: 1;
+  .farm-card-body { padding: 24px 24px 16px; flex: 1; }
+
+  .farm-name-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
   }
 
   .farm-name {
     font-family: 'Georgia', serif;
     color: var(--color-green-dark);
     font-size: 1.25rem;
-    margin: 0 0 8px;
+    margin: 0;
+  }
+
+  .distance-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--color-cream, #f7f2ea);
+    border: 1px solid #ddd6ca;
+    border-radius: 20px;
+    padding: 2px 8px 2px 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-green-dark);
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 0.85rem; height: 0.85rem; width: 0.85rem; }
   }
 
   .farm-location {
@@ -78,11 +154,7 @@
     font-size: 0.875rem;
     margin: 0 0 12px;
 
-    .location-icon {
-      font-size: 1rem;
-      height: 1rem;
-      width: 1rem;
-    }
+    .location-icon { font-size: 1rem; height: 1rem; width: 1rem; }
   }
 
   .farm-desc {
