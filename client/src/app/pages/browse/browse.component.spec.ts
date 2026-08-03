@@ -397,6 +397,150 @@ describe('BrowseComponent', () => {
     });
   });
 
+  describe('price and stock filters', () => {
+    const cheap  = mockProduct({ _id: 'p1', name: 'Cheap Milk',   price: 1.0, stock: 10 });
+    const mid    = mockProduct({ _id: 'p2', name: 'Mid Butter',   price: 3.0, stock: 5  });
+    const pricey = mockProduct({ _id: 'p3', name: 'Pricey Cheese', price: 8.0, stock: 0  });
+
+    function loadThree() {
+      const ctx = setup();
+      ctx.fixture.detectChanges();
+      ctx.httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([cheap, mid, pricey]);
+      return ctx;
+    }
+
+    it('shows all products when no filter is set', () => {
+      const { component } = loadThree();
+      expect(component.displayProducts()).toHaveSize(3);
+    });
+
+    it('minPrice filters out products below the threshold', () => {
+      const { component } = loadThree();
+      component.minPrice.set(3.0);
+      const ids = component.displayProducts().map(p => p._id);
+      expect(ids).not.toContain('p1');
+      expect(ids).toContain('p2');
+      expect(ids).toContain('p3');
+    });
+
+    it('maxPrice filters out products above the threshold', () => {
+      const { component } = loadThree();
+      component.maxPrice.set(3.0);
+      const ids = component.displayProducts().map(p => p._id);
+      expect(ids).toContain('p1');
+      expect(ids).toContain('p2');
+      expect(ids).not.toContain('p3');
+    });
+
+    it('applies minPrice and maxPrice together', () => {
+      const { component } = loadThree();
+      component.minPrice.set(2.0);
+      component.maxPrice.set(5.0);
+      expect(component.displayProducts()).toHaveSize(1);
+      expect(component.displayProducts()[0]._id).toBe('p2');
+    });
+
+    it('inStockOnly hides out-of-stock products', () => {
+      const { component } = loadThree();
+      component.inStockOnly.set(true);
+      const ids = component.displayProducts().map(p => p._id);
+      expect(ids).not.toContain('p3');
+      expect(ids).toHaveSize(2);
+    });
+
+    it('price filter and inStockOnly are applied together before sorting', () => {
+      const { component } = loadThree();
+      component.minPrice.set(2.0);
+      component.inStockOnly.set(true);
+      component.sort.set('price-asc');
+      const ids = component.displayProducts().map(p => p._id);
+      expect(ids).not.toContain('p1'); // below minPrice
+      expect(ids).not.toContain('p3'); // out of stock
+      expect(ids).toEqual(['p2']);
+    });
+
+    it('hasActiveFilters is false when nothing is set', () => {
+      const { component } = loadThree();
+      expect(component.hasActiveFilters()).toBeFalse();
+    });
+
+    it('hasActiveFilters is true when minPrice is set', () => {
+      const { component } = loadThree();
+      component.minPrice.set(1.0);
+      expect(component.hasActiveFilters()).toBeTrue();
+    });
+
+    it('hasActiveFilters is true when maxPrice is set', () => {
+      const { component } = loadThree();
+      component.maxPrice.set(10.0);
+      expect(component.hasActiveFilters()).toBeTrue();
+    });
+
+    it('hasActiveFilters is true when inStockOnly is set', () => {
+      const { component } = loadThree();
+      component.inStockOnly.set(true);
+      expect(component.hasActiveFilters()).toBeTrue();
+    });
+
+    it('clearFilters resets all filter signals and shows all products again', () => {
+      const { component } = loadThree();
+      component.minPrice.set(2.0);
+      component.maxPrice.set(5.0);
+      component.inStockOnly.set(true);
+      component.clearFilters();
+      expect(component.minPrice()).toBeNull();
+      expect(component.maxPrice()).toBeNull();
+      expect(component.inStockOnly()).toBeFalse();
+      expect(component.displayProducts()).toHaveSize(3);
+    });
+  });
+
+  describe('product card rating', () => {
+    it('shows .card-rating when avgRating is set', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([
+        mockProduct({ avgRating: 4.5, reviewCount: 12 }),
+      ]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.card-rating')).toBeTruthy();
+    });
+
+    it('shows the numeric rating and review count in the card', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([
+        mockProduct({ avgRating: 4.2, reviewCount: 7 }),
+      ]);
+      fixture.detectChanges();
+
+      const rating: HTMLElement = fixture.nativeElement.querySelector('.card-rating');
+      expect(rating.textContent).toContain('4.2');
+      expect(rating.textContent).toContain('7');
+    });
+
+    it('hides .card-rating when avgRating is null', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([
+        mockProduct({ avgRating: null }),
+      ]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.card-rating')).toBeNull();
+    });
+
+    it('hides .card-rating when avgRating is not present on the product', () => {
+      const { fixture, httpMock } = setup();
+      fixture.detectChanges();
+      httpMock.expectOne(r => r.url === PRODUCTS_URL).flush([mockProduct()]);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.card-rating')).toBeNull();
+    });
+  });
+
   describe('result count', () => {
     it('shows the count of displayed products', () => {
       const { fixture, httpMock } = setup();

@@ -189,6 +189,53 @@ describe('AuthService', () => {
     });
   });
 
+  describe('changePassword()', () => {
+    const CHANGE_PW_URL = `${environment.apiUrl}/users/change-password`;
+
+    it('sends POST to /change-password with currentPassword and newPassword', () => {
+      service.changePassword('oldpass', 'newpass123').subscribe();
+
+      const req = httpMock.expectOne(CHANGE_PW_URL);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ currentPassword: 'oldpass', newPassword: 'newpass123' });
+      req.flush({ message: 'Password changed successfully' });
+    });
+
+    it('completes successfully when the server returns 200', () => {
+      let resolved = false;
+      service.changePassword('old', 'new123456').subscribe(() => (resolved = true));
+
+      httpMock.expectOne(CHANGE_PW_URL).flush({ message: 'Password changed successfully' });
+      expect(resolved).toBeTrue();
+    });
+
+    it('propagates the error when the server rejects the current password', () => {
+      let errMsg = '';
+      service.changePassword('wrong', 'newpass123').subscribe({
+        error: (e) => (errMsg = e.error.message),
+      });
+
+      httpMock.expectOne(CHANGE_PW_URL).flush(
+        { message: 'Current password is incorrect' },
+        { status: 401, statusText: 'Unauthorized' }
+      );
+
+      expect(errMsg).toBe('Current password is incorrect');
+    });
+
+    it('does not alter currentUser after a successful password change', () => {
+      service.login('alice@example.com', 'old').subscribe();
+      httpMock.expectOne(`${environment.apiUrl}/users/login`).flush({
+        user: { id: '1', name: 'Alice', email: 'alice@example.com', role: 'customer' },
+      });
+
+      service.changePassword('old', 'newpass123').subscribe();
+      httpMock.expectOne(CHANGE_PW_URL).flush({ message: 'Password changed successfully' });
+
+      expect(service.currentUser()?.email).toBe('alice@example.com');
+    });
+  });
+
   describe('persistence', () => {
     it('restores currentUser from localStorage without any HTTP request', () => {
       // Re-initialise the service after putting a user in localStorage

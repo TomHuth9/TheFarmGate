@@ -206,4 +206,123 @@ describe('CustomerProfileComponent', () => {
       httpMock.expectNone((r) => r.method === 'PATCH' && r.url === ME_URL);
     });
   });
+
+  describe('changePwd()', () => {
+    const CHANGE_PW_URL = `${environment.apiUrl}/users/change-password`;
+
+    function loadedSetup() {
+      const ctx = setup(CUSTOMER);
+      ctx.fixture.detectChanges();
+      ctx.httpMock.expectOne((r) => r.method === 'GET' && r.url === ME_URL)
+        .flush(meResponse({ name: 'Alice', postcode: 'SW1A 1AA' }));
+      ctx.fixture.detectChanges();
+      return ctx;
+    }
+
+    it('sends POST /api/users/change-password with currentPassword and newPassword', () => {
+      const { component, httpMock } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: 'oldpass', newPassword: 'newpass1', confirmPassword: 'newpass1' });
+      component.changePwd();
+
+      const req = httpMock.expectOne((r) => r.method === 'POST' && r.url === CHANGE_PW_URL);
+      expect(req.request.body).toEqual({ currentPassword: 'oldpass', newPassword: 'newpass1' });
+      req.flush({ message: 'Password changed successfully' });
+    });
+
+    it('sets pwSaving() while the request is in flight', () => {
+      const { component, httpMock } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: 'oldpass', newPassword: 'newpass1', confirmPassword: 'newpass1' });
+      component.changePwd();
+
+      expect(component.pwSaving()).toBeTrue();
+      httpMock.expectOne((r) => r.method === 'POST' && r.url === CHANGE_PW_URL)
+        .flush({ message: 'Password changed successfully' });
+      expect(component.pwSaving()).toBeFalse();
+    });
+
+    it('sets pwSaved() to true, resets the form, then clears after 3 seconds', fakeAsync(() => {
+      const { component, httpMock } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: 'oldpass', newPassword: 'newpass1', confirmPassword: 'newpass1' });
+      component.changePwd();
+      httpMock.expectOne((r) => r.method === 'POST' && r.url === CHANGE_PW_URL)
+        .flush({ message: 'Password changed successfully' });
+
+      expect(component.pwSaved()).toBeTrue();
+      expect(component.pwForm.get('currentPassword')?.value).toBeFalsy();
+      tick(3001);
+      expect(component.pwSaved()).toBeFalse();
+    }));
+
+    it('sets pwError() with the server message on failure', () => {
+      const { component, httpMock } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: 'wrong', newPassword: 'newpass1', confirmPassword: 'newpass1' });
+      component.changePwd();
+      httpMock.expectOne((r) => r.method === 'POST' && r.url === CHANGE_PW_URL)
+        .flush({ message: 'Current password is incorrect' }, { status: 401, statusText: 'Unauthorized' });
+
+      expect(component.pwError()).toBe('Current password is incorrect');
+      expect(component.pwSaving()).toBeFalse();
+    });
+
+    it('does nothing when currentPassword is empty (invalid form)', () => {
+      const { component, httpMock } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: '', newPassword: 'newpass1', confirmPassword: 'newpass1' });
+      component.changePwd();
+
+      httpMock.expectNone((r) => r.method === 'POST' && r.url === CHANGE_PW_URL);
+    });
+
+    it('does nothing when the passwords do not match', () => {
+      const { component, httpMock } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: 'oldpass', newPassword: 'abc12345', confirmPassword: 'different' });
+      component.changePwd();
+
+      httpMock.expectNone((r) => r.method === 'POST' && r.url === CHANGE_PW_URL);
+    });
+
+    it('reports passwordMismatch error when new passwords differ', () => {
+      const { component } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: 'old', newPassword: 'abc123', confirmPassword: 'xyz789' });
+
+      expect(component.pwForm.hasError('passwordMismatch')).toBeTrue();
+    });
+
+    it('has no passwordMismatch error when new passwords are identical', () => {
+      const { component } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: 'old', newPassword: 'abc123', confirmPassword: 'abc123' });
+
+      expect(component.pwForm.hasError('passwordMismatch')).toBeFalse();
+    });
+
+    it('shows the Change Password section title in the DOM after loading', () => {
+      const { fixture } = loadedSetup();
+
+      const title: HTMLElement = fixture.nativeElement.querySelector('.section-title');
+      expect(title).toBeTruthy();
+      expect(title.textContent).toContain('Password');
+    });
+
+    it('clears a previous pwError when a new changePwd call starts', () => {
+      const { component, httpMock } = loadedSetup();
+
+      component.pwForm.setValue({ currentPassword: 'wrong', newPassword: 'newpass1', confirmPassword: 'newpass1' });
+      component.changePwd();
+      httpMock.expectOne((r) => r.method === 'POST' && r.url === CHANGE_PW_URL)
+        .flush({ message: 'Wrong' }, { status: 401, statusText: 'Unauthorized' });
+      expect(component.pwError()).toBeTruthy();
+
+      component.changePwd();
+      expect(component.pwError()).toBeNull();
+      httpMock.expectOne((r) => r.method === 'POST' && r.url === CHANGE_PW_URL)
+        .flush({ message: 'Password changed successfully' });
+    });
+  });
 });

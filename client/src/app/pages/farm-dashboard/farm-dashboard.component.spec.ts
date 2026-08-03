@@ -395,6 +395,149 @@ describe('FarmDashboardComponent', () => {
     });
   });
 
+  describe('additional analytics computeds', () => {
+    it('totalOrders() returns 0 when there are no orders', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+      expect(component.totalOrders()).toBe(0);
+    });
+
+    it('totalOrders() counts only non-cancelled orders', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ status: 'delivered' }),
+          mockOrder({ _id: 'order2', status: 'cancelled' }),
+          mockOrder({ _id: 'order3', status: 'confirmed' }),
+        ],
+      });
+      expect(component.totalOrders()).toBe(2);
+    });
+
+    it('avgOrderValue() returns 0 when there are no orders', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+      expect(component.avgOrderValue()).toBe(0);
+    });
+
+    it('avgOrderValue() is totalRevenue / totalOrders (excluding cancelled)', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ total: 10, status: 'confirmed' }),
+          mockOrder({ _id: 'order2', total: 20, status: 'delivered' }),
+          mockOrder({ _id: 'order3', total: 100, status: 'cancelled' }),
+        ],
+      });
+      expect(component.avgOrderValue()).toBeCloseTo(15);
+    });
+
+    it('revenueThisMonth() sums only non-cancelled orders placed this calendar month', () => {
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ total: 30, status: 'confirmed',  createdAt: `${ym}-10T00:00:00.000Z` }),
+          mockOrder({ _id: 'o2', total: 50, status: 'delivered',  createdAt: `${ym}-15T00:00:00.000Z` }),
+          mockOrder({ _id: 'o3', total: 10, status: 'cancelled',  createdAt: `${ym}-05T00:00:00.000Z` }),
+          mockOrder({ _id: 'o4', total: 100, status: 'confirmed', createdAt: lastMonth.toISOString() }),
+        ],
+      });
+      expect(component.revenueThisMonth()).toBeCloseTo(80);
+    });
+
+    it('revenueThisMonth() returns 0 when no orders fall in the current month', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ total: 50, status: 'confirmed', createdAt: '2020-01-01T00:00:00.000Z' }),
+        ],
+      });
+      expect(component.revenueThisMonth()).toBe(0);
+    });
+
+    it('monthlyRevenue() returns exactly 6 entries', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+      expect(component.monthlyRevenue().length).toBe(6);
+    });
+
+    it('monthlyRevenue() assigns revenue to the correct month bucket', () => {
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ total: 42, status: 'confirmed', createdAt: `${ym}-01T00:00:00.000Z` }),
+        ],
+      });
+      const months = component.monthlyRevenue();
+      const current = months[months.length - 1];
+      expect(current.revenue).toBeCloseTo(42);
+    });
+
+    it('monthlyRevenue() excludes cancelled orders from monthly totals', () => {
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ total: 99, status: 'cancelled', createdAt: `${ym}-01T00:00:00.000Z` }),
+        ],
+      });
+      const current = component.monthlyRevenue()[5];
+      expect(current.revenue).toBe(0);
+    });
+
+    it('maxMonthRevenue() equals the highest individual month value', () => {
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock, {
+        orders: [
+          mockOrder({ total: 99, status: 'confirmed', createdAt: `${ym}-01T00:00:00.000Z` }),
+        ],
+      });
+      expect(component.maxMonthRevenue()).toBeCloseTo(99);
+    });
+
+    it('maxMonthRevenue() is at least 1 when all months have zero revenue', () => {
+      const { fixture, component, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+      expect(component.maxMonthRevenue()).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders 6 .chart-bar elements in the DOM', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelectorAll('.chart-bar').length).toBe(6);
+    });
+
+    it('renders 6 .chart-label elements matching month abbreviations', () => {
+      const { fixture, httpMock } = setup(FARM_USER);
+      fixture.detectChanges();
+      flushAll(httpMock);
+      fixture.detectChanges();
+      const labels: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.chart-label');
+      expect(labels.length).toBe(6);
+    });
+  });
+
   describe('low stock indicators', () => {
     it('shows a low-stock badge for a product with 5 or fewer units remaining', () => {
       const { fixture, httpMock } = setup(FARM_USER);
