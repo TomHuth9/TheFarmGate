@@ -16,9 +16,9 @@ export function app(): express.Express {
   server.set('view engine', 'html');
   server.set('views', browserDistFolder);
 
-  server.get('**', express.static(browserDistFolder, { maxAge: '1y', index: false }));
+  server.get(/\/.*/, express.static(browserDistFolder, { maxAge: '1y', index: false }));
 
-  server.get('**', (req, res, next) => {
+  server.get(/\/.*/, (req, res, next) => {
     const { protocol, originalUrl, baseUrl, headers } = req;
 
     commonEngine
