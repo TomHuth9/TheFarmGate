@@ -77,3 +77,7 @@ Or run both concurrently from the root:
 ```bash
 npm run dev
 ```
+
+## License
+
+MIT: see [LICENSE](LICENSE).
