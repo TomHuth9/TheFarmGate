@@ -30,6 +30,33 @@
       </mat-form-field>
     </div>
 
+    <!-- Price range + stock filter -->
+    <div class="filter-row">
+      <span class="filter-label">Price</span>
+      <div class="price-range">
+        <mat-form-field appearance="outline" class="price-field" subscriptSizing="dynamic">
+          <mat-label>Min £</mat-label>
+          <input #minEl matInput type="number" min="0" step="0.01" title="Minimum price"
+            [value]="minPrice() ?? ''" (input)="setMinPrice($event)" />
+        </mat-form-field>
+        <span class="price-sep">–</span>
+        <mat-form-field appearance="outline" class="price-field" subscriptSizing="dynamic">
+          <mat-label>Max £</mat-label>
+          <input #maxEl matInput type="number" min="0" step="0.01" title="Maximum price"
+            [value]="maxPrice() ?? ''" (input)="setMaxPrice($event)" />
+        </mat-form-field>
+      </div>
+      <mat-slide-toggle [checked]="inStockOnly()" (change)="inStockOnly.set($event.checked)">
+        In stock only
+      </mat-slide-toggle>
+      @if (hasActiveFilters()) {
+        <button type="button" mat-stroked-button class="clear-btn"
+          (click)="clearFilters(); minEl.value = ''; maxEl.value = ''">
+          <mat-icon>close</mat-icon> Clear
+        </button>
+      }
+    </div>
+
     <!-- Category filter bar -->
     <div class="filter-bar">
       @for (cat of categories; track cat) {
@@ -71,6 +98,12 @@
                 <a class="product-farm" [routerLink]="['/farms', product.farm!._id]">
                   <mat-icon>agriculture</mat-icon>{{ product.farm!.farmName }}
                 </a>
+              }
+              @if (product.avgRating) {
+                <div class="card-rating">
+                  <mat-icon aria-hidden="true">star</mat-icon>
+                  <span>{{ product.avgRating | number:'1.1-1' }} ({{ product.reviewCount }})</span>
+                </div>
               }
               <p class="product-desc">{{ product.description }}</p>
             </mat-card-content>

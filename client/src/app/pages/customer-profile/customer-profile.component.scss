@@ -47,6 +47,20 @@
   .success-msg { background: #d1e7dd; color: #0a3622; }
   .error-msg   { background: #f8d7da; color: #58151c; }
 
+  .section-divider {
+    border: none;
+    border-top: 1px solid #e0d5c4;
+    margin: 32px 0 28px;
+    max-width: 480px;
+  }
+
+  .section-title {
+    font-family: 'Georgia', serif;
+    font-size: 1.25rem;
+    color: var(--color-green-dark);
+    margin: 0 0 16px;
+  }
+
   .form-actions {
     margin-top: 8px;
 

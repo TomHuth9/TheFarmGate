@@ -1,8 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { body, param, query } = require('express-validator');
-const Review = require('../models/Review');
-const Order  = require('../models/Order');
+const Review   = require('../models/Review');
+const Order    = require('../models/Order');
+const Product  = require('../models/Product');
 const { protect } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validate');
 
@@ -83,6 +84,17 @@ router.post('/', protect, [
     });
 
     await review.populate('user', 'name');
+
+    // Keep denormalized rating stats on the product in sync
+    const [stats] = await Review.aggregate([
+      { $match: { product: new mongoose.Types.ObjectId(productId) } },
+      { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
+    ]);
+    await Product.findByIdAndUpdate(productId, {
+      avgRating:   stats?.avg   ?? null,
+      reviewCount: stats?.count ?? 0,
+    });
+
     res.status(201).json(review);
   } catch (err) {
     if (err.code === 11000) {

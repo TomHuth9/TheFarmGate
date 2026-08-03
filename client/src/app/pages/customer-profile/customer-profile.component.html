@@ -62,6 +62,63 @@
         </div>
 
       </form>
+      <div class="section-divider"></div>
+
+      <h2 class="section-title">Change Password</h2>
+
+      <form class="profile-form" [formGroup]="pwForm" (ngSubmit)="changePwd()">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Current password</mat-label>
+          <mat-icon matPrefix>lock</mat-icon>
+          <input matInput type="password" formControlName="currentPassword" autocomplete="current-password" title="Current password" />
+          @if (pwForm.get('currentPassword')?.hasError('required') && pwForm.get('currentPassword')?.touched) {
+            <mat-error>Current password is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>New password</mat-label>
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <input matInput type="password" formControlName="newPassword" autocomplete="new-password" title="New password" />
+          @if (pwForm.get('newPassword')?.hasError('minlength') && pwForm.get('newPassword')?.touched) {
+            <mat-error>Password must be at least 6 characters</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Confirm new password</mat-label>
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <input matInput type="password" formControlName="confirmPassword" autocomplete="new-password" title="Confirm new password" />
+          @if (pwForm.hasError('passwordMismatch') && pwForm.get('confirmPassword')?.touched) {
+            <mat-error>Passwords do not match</mat-error>
+          }
+        </mat-form-field>
+
+        @if (pwSaved()) {
+          <div class="success-msg">
+            <mat-icon>check_circle</mat-icon> Password changed successfully
+          </div>
+        }
+
+        @if (pwError()) {
+          <div class="error-msg">
+            <mat-icon>error</mat-icon> {{ pwError() }}
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="submit" mat-raised-button color="primary"
+            [disabled]="pwForm.invalid || pwSaving()">
+            @if (pwSaving()) {
+              <mat-spinner diameter="18"></mat-spinner>
+            } @else {
+              <mat-icon>lock</mat-icon> Change Password
+            }
+          </button>
+        </div>
+
+      </form>
     }
   </div>
 </div>

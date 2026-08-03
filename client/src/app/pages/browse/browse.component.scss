@@ -32,6 +32,65 @@
     margin: 0 0 16px;
   }
 
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--color-cream);
+    border: 1px solid #e0d5c4;
+    border-radius: 8px;
+
+    .filter-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+
+    .price-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .price-field { width: 90px; }
+
+    .price-sep {
+      color: #aaa;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .clear-btn {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+    }
+  }
+
+  .card-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.78rem;
+    color: #888;
+    margin-bottom: 4px;
+
+    mat-icon {
+      font-size: 0.9rem;
+      height: 0.9rem;
+      width: 0.9rem;
+      color: #f5a623;
+    }
+  }
+
   .product-farm {
     display: inline-flex;
     align-items: center;

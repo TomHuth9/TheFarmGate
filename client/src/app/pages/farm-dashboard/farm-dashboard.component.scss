@@ -17,6 +17,60 @@
 
   .subtitle { color: #777; margin: 0; }
 
+  // ── Monthly revenue chart ─────────────────────────────────
+  .monthly-chart-wrap {
+    margin-bottom: 24px;
+
+    .chart-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 10px;
+    }
+  }
+
+  .monthly-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 80px;
+
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+    }
+
+    .chart-bar-outer {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .chart-bar {
+      width: 100%;
+      background: var(--color-green-mid, #5a7a3a);
+      border-radius: 3px 3px 0 0;
+      min-height: 3px;
+      transition: height 0.3s ease;
+      opacity: 0.8;
+
+      &:hover { opacity: 1; }
+    }
+
+    .chart-label {
+      font-size: 0.7rem;
+      color: #999;
+      white-space: nowrap;
+    }
+  }
+
   // ── Low-stock banner ───────────────────────────────────────
   .low-stock-banner {
     display: flex;

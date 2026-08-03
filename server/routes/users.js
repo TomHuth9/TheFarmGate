@@ -258,6 +258,33 @@ router.post('/reset-password/:token', [
   }
 });
 
+// POST /api/users/change-password — authenticated user changes their own password
+router.post('/change-password', protect, [
+  body('currentPassword').notEmpty().withMessage('Current password is required').isLength({ max: 128 }),
+  body('newPassword').isLength({ min: 6, max: 128 }).withMessage('New password must be 6–128 characters'),
+  handleValidationErrors,
+], async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const ok = await user.comparePassword(req.body.currentPassword);
+    if (!ok) return res.status(401).json({ message: 'Current password is incorrect' });
+
+    user.password = req.body.newPassword;
+    user.passwordChangedAt = new Date();
+    await user.save();
+
+    // Re-issue cookie so the session token reflects the new passwordChangedAt
+    const token = signToken(user);
+    setAuthCookie(res, token);
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not change password' });
+  }
+});
+
 // GET /api/users — admin: list all users
 router.get('/', protect, adminOnly, async (req, res) => {
   try {

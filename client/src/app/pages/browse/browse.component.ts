@@ -10,7 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { CurrencyPipe } from '@angular/common';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ProductService } from '../../services/product.service';
 import { BasketService } from '../../services/basket.service';
@@ -22,10 +23,10 @@ type SortKey = 'default' | 'price-asc' | 'price-desc' | 'name-asc';
   selector: 'app-browse',
   standalone: true,
   imports: [
-    RouterLink, CurrencyPipe, ReactiveFormsModule,
+    RouterLink, CurrencyPipe, DecimalPipe, ReactiveFormsModule,
     MatAutocompleteModule, MatButtonModule, MatButtonToggleModule, MatCardModule,
     MatFormFieldModule, MatIconModule, MatInputModule,
-    MatProgressSpinnerModule, MatSelectModule,
+    MatProgressSpinnerModule, MatSelectModule, MatSlideToggleModule,
   ],
   templateUrl: './browse.component.html',
   styleUrl: './browse.component.scss',
@@ -42,6 +43,13 @@ export class BrowseComponent implements OnInit {
   sort = signal<SortKey>('default');
   searchControl = new FormControl('');
   searchTerm = signal('');
+  minPrice = signal<number | null>(null);
+  maxPrice = signal<number | null>(null);
+  inStockOnly = signal(false);
+
+  hasActiveFilters = computed(() =>
+    this.minPrice() !== null || this.maxPrice() !== null || this.inStockOnly()
+  );
 
   suggestions = computed<string[]>(() => {
     const term = this.searchTerm().trim().toLowerCase();
@@ -63,7 +71,12 @@ export class BrowseComponent implements OnInit {
   ];
 
   displayProducts = computed<Product[]>(() => {
-    const list = [...this.products()];
+    let list = [...this.products()];
+    const min = this.minPrice();
+    const max = this.maxPrice();
+    if (min !== null) list = list.filter(p => p.price >= min);
+    if (max !== null) list = list.filter(p => p.price <= max);
+    if (this.inStockOnly()) list = list.filter(p => p.stock > 0);
     switch (this.sort()) {
       case 'price-asc':  return list.sort((a, b) => a.price - b.price);
       case 'price-desc': return list.sort((a, b) => b.price - a.price);
@@ -88,6 +101,22 @@ export class BrowseComponent implements OnInit {
     ).subscribe((term) => {
       this.loadProducts(this.activeCategory(), term ?? '');
     });
+  }
+
+  setMinPrice(e: Event) {
+    const v = parseFloat((e.target as HTMLInputElement).value);
+    this.minPrice.set(isNaN(v) ? null : v);
+  }
+
+  setMaxPrice(e: Event) {
+    const v = parseFloat((e.target as HTMLInputElement).value);
+    this.maxPrice.set(isNaN(v) ? null : v);
+  }
+
+  clearFilters() {
+    this.minPrice.set(null);
+    this.maxPrice.set(null);
+    this.inStockOnly.set(false);
   }
 
   selectCategory(cat: string) {

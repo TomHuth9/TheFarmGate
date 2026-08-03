@@ -77,6 +77,10 @@ export class AuthService {
     );
   }
 
+  changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API}/change-password`, { currentPassword, newPassword });
+  }
+
   updateProfile(data: { name?: string; farmName?: string; farmDescription?: string; farmLocation?: string }) {
     return this.http.patch<FarmProfile>(`${this.API}/me`, data).pipe(
       tap((updated) => {

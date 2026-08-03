@@ -16,6 +16,9 @@ const productSchema = new mongoose.Schema(
     featured: { type: Boolean, default: false },    // admin-controlled: appears on homepage
     farmFeatured: { type: Boolean, default: false }, // farm-controlled: appears at top of farm store page (max 5)
 
+    avgRating:   { type: Number, default: null },
+    reviewCount: { type: Number, default: 0 },
+
     // Farm that listed this product (null for admin-created products)
     farm: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },

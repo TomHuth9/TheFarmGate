@@ -15,5 +15,7 @@ export interface Product {
   stock: number;
   featured: boolean;
   farmFeatured?: boolean;
+  avgRating?: number | null;
+  reviewCount?: number;
   farm?: FarmRef | null;
 }

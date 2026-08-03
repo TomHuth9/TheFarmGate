@@ -56,6 +56,46 @@ export class FarmDashboardComponent implements OnInit {
       .reduce((sum, o) => sum + o.total, 0)
   );
 
+  totalOrders = computed(() =>
+    this.orders().filter(o => o.status !== 'cancelled').length
+  );
+
+  avgOrderValue = computed(() => {
+    const count = this.totalOrders();
+    return count ? this.totalRevenue() / count : 0;
+  });
+
+  revenueThisMonth = computed(() => {
+    const now = new Date();
+    return this.orders()
+      .filter(o => {
+        if (o.status === 'cancelled') return false;
+        const d = new Date(o.createdAt);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, o) => sum + o.total, 0);
+  });
+
+  monthlyRevenue = computed(() => {
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      const m = d.getMonth(), y = d.getFullYear();
+      const revenue = this.orders()
+        .filter(o => {
+          if (o.status === 'cancelled') return false;
+          const od = new Date(o.createdAt);
+          return od.getMonth() === m && od.getFullYear() === y;
+        })
+        .reduce((sum, o) => sum + o.total, 0);
+      return { label: d.toLocaleString('default', { month: 'short' }), revenue };
+    });
+  });
+
+  maxMonthRevenue = computed(() =>
+    Math.max(...this.monthlyRevenue().map(m => m.revenue), 1)
+  );
+
   pendingCount = computed(() =>
     this.orders().filter(o => o.status === 'pending').length
   );
