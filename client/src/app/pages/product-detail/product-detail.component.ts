@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -18,7 +18,7 @@ import { Review, ReviewPage } from '../../models/review.model';
   selector: 'app-product-detail',
   standalone: true,
   imports: [
-    RouterLink, CurrencyPipe, DatePipe, ReactiveFormsModule,
+    RouterLink, CurrencyPipe, DatePipe, DecimalPipe, ReactiveFormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     MatFormFieldModule, MatInputModule,
   ],

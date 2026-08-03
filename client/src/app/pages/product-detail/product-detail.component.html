@@ -2,7 +2,8 @@
   <div class="container">
     @if (loading()) {
       <div class="spinner-wrap"><mat-spinner diameter="48" /></div>
-    } @else if (product(); as p) {
+    } @else {
+      @if (product(); as p) {
 
       <a mat-button routerLink="/browse" class="back-link">
         <mat-icon>arrow_back</mat-icon> Back to Shop
@@ -138,7 +139,8 @@
 
         @if (reviewsLoading()) {
           <div class="spinner-wrap"><mat-spinner diameter="36" /></div>
-        } @else if (reviewPage(); as rp) {
+        } @else {
+          @if (reviewPage(); as rp) {
 
           <!-- Aggregate header -->
           @if (rp.count > 0) {
@@ -233,11 +235,13 @@
               </div>
             }
           }
+          }
         }
       </section>
 
-    } @else {
-      <p class="empty-state">Product not found.</p>
+      } @else {
+        <p class="empty-state">Product not found.</p>
+      }
     }
   </div>
 </div>
