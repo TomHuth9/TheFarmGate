@@ -274,6 +274,7 @@ describe('CustomerProfileComponent', () => {
       component.pwForm.setValue({ currentPassword: '', newPassword: 'newpass1', confirmPassword: 'newpass1' });
       component.changePwd();
 
+      expect(component.pwSaving()).toBeFalse();
       httpMock.expectNone((r) => r.method === 'POST' && r.url === CHANGE_PW_URL);
     });
 
