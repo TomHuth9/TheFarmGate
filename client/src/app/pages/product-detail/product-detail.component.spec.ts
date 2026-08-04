@@ -90,6 +90,7 @@ describe('ProductDetailComponent', () => {
       const { fixture, component, httpMock } = setup();
       fixture.detectChanges();
       httpMock.expectOne(PRODUCT_URL).flush(mockProduct());
+      httpMock.expectOne((r) => r.url === REVIEWS_URL).flush({ reviews: [], total: 0, page: 1, pages: 0, avgRating: null, count: 0 });
       fixture.detectChanges();
 
       expect(component.loading()).toBeFalse();

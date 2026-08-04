@@ -101,6 +101,11 @@ export class LoginComponent implements OnInit {
             this.loading.set(false);
             return;
           }
+          if (role === 'farm') {
+            this.router.navigate(['/farm-dashboard']);
+          } else {
+            this.router.navigate(['/']);
+          }
         },
         error: (err) => { this.error.set(err.error?.message ?? 'Registration failed'); this.loading.set(false); },
       });
