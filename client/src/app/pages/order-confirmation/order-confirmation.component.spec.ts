@@ -34,7 +34,7 @@ function setup() {
       provideNoopAnimations(),
       {
         provide: ActivatedRoute,
-        useValue: { snapshot: { paramMap: { get: (_: string) => ORDER_ID } } },
+        useValue: { snapshot: { paramMap: { get: () => ORDER_ID } } },
       },
     ],
   });
@@ -90,7 +90,7 @@ describe('OrderConfirmationComponent', () => {
   });
 
   describe('status-aware header', () => {
-    const cases: Array<{ status: OrderStatus; expected: string }> = [
+    const cases: { status: OrderStatus; expected: string }[] = [
       { status: 'pending',    expected: 'Order Placed!' },
       { status: 'confirmed',  expected: 'Order Confirmed' },
       { status: 'dispatched', expected: 'On Its Way!' },

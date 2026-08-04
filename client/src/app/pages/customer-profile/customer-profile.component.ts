@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
+import { FarmProfile } from '../../models/user.model';
 
 function passwordsMatch(): ValidatorFn {
   return (group: AbstractControl): ValidationErrors | null => {
@@ -60,7 +61,7 @@ export class CustomerProfileComponent implements OnInit {
     }
 
     this.auth.getMe().subscribe({
-      next: (profile: any) => {
+      next: (profile: FarmProfile) => {
         this.form.patchValue({
           name: profile.name,
           email: profile.email,

@@ -26,7 +26,7 @@ const mockProfile = {
 
 function flushAll(
   httpMock: HttpTestingController,
-  { products = [] as any[], orders = [] as any[], profile = mockProfile } = {}
+  { products = [] as Product[], orders = [] as Order[], profile = mockProfile } = {}
 ) {
   httpMock.expectOne((r) => r.url === PRODUCTS_URL).flush(products);
   httpMock.expectOne(FARM_ORDERS_URL).flush(orders);

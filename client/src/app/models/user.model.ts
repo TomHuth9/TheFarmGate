@@ -37,6 +37,7 @@ export interface FarmProfile {
   farmName?: string;
   farmDescription?: string;
   farmLocation?: string;
+  postcode?: string;
 }
 
 export interface CustomerProfile {

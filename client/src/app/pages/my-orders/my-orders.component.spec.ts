@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter, Router } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { MyOrdersComponent } from './my-orders.component';
-import { Order, StatusHistoryEntry } from '../../models/order.model';
+import { Order } from '../../models/order.model';
 import { environment } from '../../../environments/environment';
 
 const MY_ORDERS_URL = `${environment.apiUrl}/orders/my`;

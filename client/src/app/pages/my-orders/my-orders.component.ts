@@ -104,7 +104,7 @@ export class MyOrdersComponent implements OnInit {
     this.reorderResult.set(null);
 
     const requests = order.items.map(item => {
-      const id = typeof item.product === 'string' ? item.product : (item.product as any)._id;
+      const id = typeof item.product === 'string' ? item.product : (item.product as { _id: string })._id;
       return this.productService.getById(id).pipe(catchError(() => of(null)));
     });
 

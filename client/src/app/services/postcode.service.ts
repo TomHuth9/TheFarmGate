@@ -13,7 +13,7 @@ interface SingleResponse {
 }
 
 interface BulkResponse {
-  result: Array<{ query: string; result: { latitude: number; longitude: number } | null }>;
+  result: { query: string; result: { latitude: number; longitude: number } | null }[];
 }
 
 @Injectable({ providedIn: 'root' })

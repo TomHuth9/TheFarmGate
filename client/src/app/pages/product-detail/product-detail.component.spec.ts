@@ -308,7 +308,7 @@ describe('ProductDetailComponent', () => {
     });
 
     it('shows the basket notice when basketQty is greater than 0', () => {
-      const { fixture, component, httpMock, basket } = setup();
+      const { fixture, httpMock, basket } = setup();
       fixture.detectChanges();
       const p = mockProduct();
       httpMock.expectOne(PRODUCT_URL).flush(p);
@@ -332,7 +332,7 @@ describe('ProductDetailComponent', () => {
     });
 
     it('shows "item" (singular) when basketQty is 1', () => {
-      const { fixture, component, httpMock, basket } = setup();
+      const { fixture, httpMock, basket } = setup();
       fixture.detectChanges();
       const p = mockProduct();
       httpMock.expectOne(PRODUCT_URL).flush(p);

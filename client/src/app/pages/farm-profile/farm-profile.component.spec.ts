@@ -4,7 +4,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
 import { FarmProfileComponent } from './farm-profile.component';
 import { Farm } from '../../models/user.model';
 import { Product } from '../../models/product.model';

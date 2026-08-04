@@ -39,6 +39,7 @@ export class HomeComponent implements OnInit {
     this.productService.getFeatured().subscribe((products) => this.featured.set(products));
     this.http.get<Farm[]>(`${environment.apiUrl}/farms`).subscribe({
       next: (all) => this.farms.set(all.slice(0, 3)),
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       error: () => {},
     });
   }
